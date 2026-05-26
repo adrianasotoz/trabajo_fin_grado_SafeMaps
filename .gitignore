@@ -1,9 +1,12 @@
 # Entorno virtual
 venv/
 
-# Datos (archivos pesados)
+# Datos (los archivos son demasiado pesados)
 data/raw/
 data/processed/
+
+# Caché de osmnx
+cache/
 
 # Python
 __pycache__/
