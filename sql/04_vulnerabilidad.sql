@@ -1,9 +1,8 @@
 -- Índice Iguala Madrid: vulnerabilidad territorial por distrito.
 -- Fuente de los datos: scripts/05_load_vulnerabilidad.py
 --
--- Tabla de referencia por distrito (sin geometría propia). Aún no está unida
--- a `edges`: falta cargar los polígonos de distritos de Madrid para hacer el
--- join espacial edge -> distrito. Mientras tanto se puede relacionar con
+-- Tabla de referencia por distrito (sin geometría propia). Se relaciona con
+-- `edges` a través de `edges.cod_distrito` (ver sql/05_distritos.sql) y con
 -- `accidentes` por `cod_distrito`.
 
 CREATE TABLE IF NOT EXISTS vulnerabilidad_distritos (
