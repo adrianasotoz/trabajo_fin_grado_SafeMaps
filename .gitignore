@@ -19,3 +19,16 @@ __pycache__/
 
 # Credenciales
 .env
+
+# Artefactos de compilación LaTeX (memoria del TFG)
+docs/*.aux
+docs/*.bbl
+docs/*.blg
+docs/*.fdb_latexmk
+docs/*.fls
+docs/*.lof
+docs/*.log
+docs/*.lot
+docs/*.out
+docs/*.pdf
+docs/*.toc

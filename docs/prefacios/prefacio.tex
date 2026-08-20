@@ -1,0 +1,108 @@
+\chapter*{}
+%\thispagestyle{empty}
+%\cleardoublepage
+
+%\thispagestyle{empty}
+
+\input{portada/portada_2}
+
+
+
+\cleardoublepage
+\thispagestyle{empty}
+
+\begin{center}
+{\large\bfseries Sistema de Cálculo de Rutas Seguras en Entornos Urbanos Mediante Análisis Espacial: Integración de factores de riesgo y datos abiertos en la ciudad de Madrid}\\
+\end{center}
+\begin{center}
+Adriana Soto Zaragoza\\
+\end{center}
+
+\noindent{\textbf{Palabras clave}: rutas seguras, Sistemas de Información Geográfica, PostGIS, pgRouting, movilidad urbana, análisis espacial, datos abiertos, Madrid}\\
+
+\vspace{0.7cm}
+\noindent{\textbf{Resumen}}\\
+
+La movilidad peatonal urbana enfrenta riesgos que los sistemas de navegación convencionales ignoran al priorizar únicamente la distancia o el tiempo de desplazamiento. Este Trabajo Fin de Grado presenta el diseño y desarrollo de un sistema de cálculo de rutas seguras para peatones en la ciudad de Madrid, basado en el análisis espacial de datos abiertos georreferenciados. El sistema integra indicadores de riesgo urbano —la cobertura de iluminación pública, un índice de vulnerabilidad territorial por distritos y la accidentalidad con víctimas peatonales—, todos ellos obtenidos del portal de Datos Abiertos y del Geoportal del Ayuntamiento de Madrid. Mediante un proceso ETL, estos datos se incorporan a una base de datos espacial implementada en PostgreSQL/PostGIS, donde se modela la red viaria urbana como un grafo ponderado. Los pesos de las aristas reflejan el nivel de riesgo de cada segmento de calle según los indicadores definidos. El motor de enrutamiento pgRouting calcula sobre dicho grafo la ruta que minimiza la exposición al riesgo. El sistema se expone a través de un prototipo de visor cartográfico web desarrollado con Leaflet, que permite comparar la ruta segura con la ruta más corta convencional.
+\cleardoublepage
+
+
+\thispagestyle{empty}
+
+\begin{center}
+{\large\bfseries A Safe Routing System for Urban Enviroments via Spatial Analysis: Integrating Risk Factors and Open Data in Madrid}\\
+\end{center}
+\begin{center}
+Adriana Soto Zaragoza\\
+\end{center}
+
+%\vspace{0.7cm}
+\noindent{\textbf{Keywords}: safe routing, Geographic Information Systems, PostGIS, pgRouting, urban mobility, spatial analysis, open data, Madrid}\\
+
+\vspace{0.7cm}
+\noindent{\textbf{Abstract}}\\
+
+Urban pedestrian mobility faces risks that conventional navigation systems overlook by optimising solely for distance or travel time. This Bachelor's Thesis presents the design and development of a safe route calculation system for pedestrians in the city of Madrid, based on spatial analysis of georeferenced open data. The system integrates urban risk indicators —public street lighting coverage, a district-level territorial vulnerability index, and pedestrian traffic accident records—, all sourced from the Madrid City Council Open Data portal and Geoportal. Through an ETL pipeline, these datasets are loaded into a spatial database built on PostgreSQL/PostGIS, where the urban road network is modelled as a weighted graph. Edge weights reflect the risk level of each street segment according to the defined indicators. The pgRouting extension computes the route minimising risk exposure over this graph. The system is exposed through a web mapping prototype developed with Leaflet, enabling users to compare the safe route against the conventional shortest path.
+
+\chapter*{}
+\thispagestyle{empty}
+
+\noindent\rule[-1ex]{\textwidth}{2pt}\\[4.5ex]
+
+Yo, \textbf{Adriana Soto Zaragoza}, alumno de la titulación Ingeniería Informática de la \textbf{Escuela Técnica Superior
+de Ingenierías Informática y de Telecomunicación de la Universidad de Granada}, con DNI \rule{2.5cm}{0.4pt}, autorizo la
+ubicación de la siguiente copia de mi Trabajo Fin de Grado en la biblioteca del centro para que pueda ser
+consultada por las personas que lo deseen.
+
+\vspace{6cm}
+
+\noindent Fdo: Adriana Soto Zaragoza
+
+\vspace{2cm}
+
+\begin{flushright}
+Granada, junio de 2026.
+\end{flushright}
+
+
+\chapter*{}
+\thispagestyle{empty}
+
+\noindent\rule[-1ex]{\textwidth}{2pt}\\[4.5ex]
+
+D. \textbf{José Samos Jiménez (tutor1)}, Profesor del Área de Sistemas de Información del Departamento de Lenguajes y Sistemas Informáticos de la Universidad de Granada.
+
+
+\vspace{0.5cm}
+
+\textbf{Informan:}
+
+\vspace{0.5cm}
+
+Que el presente trabajo, titulado \textit{\textbf{Sistema de Cálculo de Rutas Seguras en Entornos Urbanos Mediante Análisis Espacial: Integración de factores de riesgo y datos abiertos en la ciudad de Madrid}},
+ha sido realizado bajo su supervisión por \textbf{Adriana Soto Zaragoza}, y autorizamos la defensa de dicho trabajo ante el tribunal
+que corresponda.
+
+\vspace{0.5cm}
+
+Y para que conste, expiden y firman el presente informe en Granada a junio de 2026.
+
+\vspace{1cm}
+
+\textbf{Los directores:}
+
+\vspace{5cm}
+
+\noindent \textbf{José Samos Jiménez}
+
+\chapter*{Agradecimientos}
+\thispagestyle{empty}
+
+       \vspace{1cm}
+
+
+Poner aquí agradecimientos...
+
+% NOTA: Los agradecimientos son opcionales pero habituales en un TFG.
+% Puedes agradecer a tu tutor, familia, compañeros, etc.
+% Cuando los tengas redactados, sustituye este texto.

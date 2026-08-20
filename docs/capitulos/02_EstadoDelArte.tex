@@ -1,0 +1,126 @@
+\chapter{Estado del arte}
+\label{cap:estadoarte}
+
+Este capítulo sitúa el proyecto en el contexto científico y tecnológico existente. Se revisan, en primer lugar, los conceptos fundamentales del dominio del problema; a continuación, se analizan los trabajos relacionados más relevantes; y finalmente se describen las metodologías y tecnologías que se han considerado para el desarrollo del sistema propuesto.
+
+% -----------------------------------------------------------------------
+% 2.1 DESCRIPCIÓN DEL DOMINIO DEL PROBLEMA
+% -----------------------------------------------------------------------
+\section{Descripción del dominio del problema}
+\label{sec:dominio}
+
+\subsection{Seguridad en la movilidad urbana peatonal}
+\label{subsec:seguridad_urbana}
+
+La seguridad en los desplazamientos urbanos es un concepto multidimensional que ha recibido creciente atención en la literatura científica durante la última década. Sohrabi et al. \cite{sohrabi2022} identifican cinco categorías de riesgo en los sistemas de enrutamiento seguros: riesgo de accidente de vehículo a motor, riesgo de salud, riesgo de accidente de peatón o ciclista, riesgo de criminalidad y riesgo de transporte de materiales peligrosos (HAZMAT). En el contexto de un sistema de rutas peatonales urbanas, las tres categorías más relevantes son el riesgo de criminalidad, el riesgo de accidente peatonal y el riesgo asociado a las condiciones ambientales del entorno, siendo la iluminación el factor ambiental más estudiado. Como se detalla en la Sección~\ref{sec:motivacion} del Capítulo~\ref{cap:introduccion}, el presente proyecto no dispone de datos de criminalidad con desagregación geográfica y aproxima esta dimensión mediante un índice de vulnerabilidad territorial (Sección~\ref{subsec:vulnerabilidad_datos}).
+
+El \textbf{riesgo de criminalidad} hace referencia a la probabilidad de ser víctima de un delito a lo largo de una ruta. La literatura ha demostrado que este riesgo presenta una distribución espacial heterogénea dentro de la ciudad, concentrándose en determinadas zonas y franjas horarias. Trabajos como los de Galbrun et al. \cite{galbrun2016} y Levy et al. \cite{levy2020} han demostrado que es posible cuantificar este riesgo a partir de datos históricos de criminalidad georreferenciados y utilizarlo como función de coste en un algoritmo de enrutamiento.
+
+El \textbf{riesgo de accidente peatonal} se refiere a la probabilidad de verse involucrado en una colisión con un vehículo a motor durante el desplazamiento a pie. Este riesgo depende de factores como la densidad del tráfico, el diseño de la vía, la señalización, la presencia de pasos de peatones y las condiciones de visibilidad. Lozano Domínguez y Mateo Sanguino \cite{lozano2021} desarrollaron un sistema de enrutamiento peatonal seguro que incorpora la detección de la intención de cruce y otros indicadores de riesgo de atropello, demostrando la viabilidad de integrar este tipo de datos en tiempo real.
+
+El \textbf{riesgo ambiental}, y en particular la \textbf{iluminación pública}, es un factor que influye tanto en el riesgo de accidente como en el de criminalidad. La falta de iluminación adecuada reduce la visibilidad de peatones para los conductores y genera entornos percibidos como inseguros que pueden favorecer la comisión de delitos. Bao et al. \cite{bao2017} propusieron un algoritmo de búsqueda de rutas para peatones que incorpora las condiciones de iluminación y la presencia de referencias visuales (landmarks) como indicadores de seguridad, asignando una puntuación de seguridad a cada segmento de la red viaria.
+
+\subsection{Enrutamiento sobre grafos y algoritmos clásicos}
+\label{subsec:grafos}
+
+El problema del cálculo de rutas óptimas se formaliza matemáticamente como un problema de búsqueda del camino mínimo (o de coste mínimo) en un grafo dirigido y ponderado $G = (V, E, w)$, donde $V$ es el conjunto de nodos (intersecciones), $E$ es el conjunto de aristas (segmentos de calle) y $w: E \rightarrow \mathbb{R}^+$ es la función de peso que asigna un coste a cada arista.
+
+El algoritmo de \textbf{Dijkstra} \cite{gallo1988} es el algoritmo clásico de referencia para este problema. Dado un nodo origen, calcula el camino de coste mínimo hacia todos los demás nodos del grafo en tiempo $O(|V|^2)$ con una implementación básica, o $O((|V|+|E|)\log|V|)$ con una cola de prioridad. Es el algoritmo subyacente en la mayoría de sistemas de navegación y en herramientas como pgRouting.
+
+El algoritmo \textbf{A*} es una variante heurística de Dijkstra que utiliza una función de estimación del coste restante (heurística admisible) para explorar preferentemente los nodos más prometedores, reduciendo el número de nodos evaluados y mejorando el rendimiento en grafos grandes. Es ampliamente utilizado en sistemas de navegación en tiempo real.
+
+En el contexto del enrutamiento seguro, la clave no está en cambiar el algoritmo de búsqueda sino en \textbf{redefinir la función de peso} $w$ de las aristas para que refleje el nivel de riesgo de cada segmento en lugar de (o además de) su longitud o tiempo de recorrido. Esta es la aproximación adoptada en el presente proyecto.
+
+\subsection{Sistemas de Información Geográfica aplicados a la movilidad}
+\label{subsec:sig_movilidad}
+
+Los Sistemas de Información Geográfica (SIG) proporcionan el marco conceptual y tecnológico para integrar, analizar y visualizar datos con componente espacial. En el contexto del enrutamiento urbano, los SIG permiten modelar la red viaria como un grafo topológico, realizar operaciones de análisis espacial (intersecciones, buffers, interpolaciones) para asignar indicadores de riesgo a los segmentos de la red, y visualizar los resultados sobre un mapa.
+
+La combinación de bases de datos espaciales relacionales —como PostgreSQL con la extensión PostGIS— con motores de enrutamiento sobre grafos —como pgRouting— es la arquitectura tecnológica más consolidada para implementar sistemas de enrutamiento con criterios personalizados. Esta arquitectura permite expresar toda la lógica del sistema (extracción de datos, modelado de la red, asignación de pesos y cálculo de rutas) mediante consultas SQL estándar extendidas con funciones espaciales y de grafos, lo que facilita la reproducibilidad y la integración con herramientas de visualización web.
+
+% -----------------------------------------------------------------------
+% 2.2 TRABAJOS RELACIONADOS
+% -----------------------------------------------------------------------
+\section{Trabajos relacionados}
+\label{sec:trabajos_relacionados}
+
+La revisión sistemática de Sohrabi et al. \cite{sohrabi2022} constituye el trabajo de síntesis más completo sobre el estado del arte en enrutamiento seguro. Tras analizar más de 5.900 publicaciones en las bases de datos Scopus, Web of Science e IEEE Xplore, identificaron 40 estudios que cumplen los criterios de inclusión. Sus hallazgos muestran que aproximadamente el 41\% de los estudios abordan el riesgo de accidente de vehículo, el 25\% el riesgo de criminalidad y el 21\% el riesgo de accidente peatonal o ciclista. A continuación se describen los trabajos más relevantes para el presente proyecto, agrupados por el tipo de riesgo que abordan.
+
+\subsection{Sistemas basados en riesgo de criminalidad}
+\label{subsec:trabajos_crimen}
+
+Galbrun et al. \cite{galbrun2016} propusieron uno de los primeros sistemas formales de navegación urbana más allá de la ruta más corta, utilizando datos históricos de criminalidad para calcular rutas que minimizan la exposición al crimen. Su trabajo demostró que es posible encontrar rutas significativamente más seguras con un incremento de distancia asumible, y formalizó el problema como una búsqueda del camino mínimo en un grafo donde el peso de cada arista es proporcional a la densidad de crímenes en su entorno, estimada mediante un kernel de densidad gaussiano.
+
+Levy et al. \cite{levy2020} desarrollaron \textit{SafeRoute}, un sistema de aprendizaje por refuerzo para la navegación segura en entornos urbanos. Su agente aprende a navegar por las calles de una ciudad evitando zonas de alta criminalidad, utilizando datos históricos de crímenes de la ciudad de San Francisco. Una de las aportaciones más interesantes de este trabajo es la demostración de que las rutas seguras cambian significativamente entre el día y la noche, lo que pone de manifiesto la importancia de la dimensión temporal en la evaluación del riesgo.
+
+Mata et al. \cite{mata2016} desarrollaron un sistema de información móvil para encontrar rutas seguras en la Ciudad de México, integrando datos de crimen oficiales y datos de crowdsourcing procedentes de redes sociales. Su sistema clasifica y geocodifica los crímenes mediante un clasificador Naive Bayes y calcula la ruta que minimiza la exposición a zonas de riesgo. Este trabajo es especialmente relevante por su uso de datos abiertos municipales, similar a la aproximación del presente proyecto.
+
+Soni et al. \cite{soni2019} propusieron \textit{Route-The Safe}, un modelo de predicción de rutas seguras que combina datos de accidentes y datos de criminalidad de la ciudad de Nueva York. Su metodología aplica un algoritmo de \textit{clustering} anidado K-Means para dividir la ciudad en regiones de riesgo y entrena un regresor K-Nearest Neighbor para predecir la puntuación de riesgo de cualquier punto de la red viaria. La ruta sugerida como más segura es aquella con la puntuación de riesgo acumulada más baja.
+
+\subsection{Sistemas basados en riesgo de accidente peatonal}
+\label{subsec:trabajos_accidente}
+
+Lozano Domínguez y Mateo Sanguino \cite{lozano2021} desarrollaron \textit{Walking Secure}, una aplicación móvil de enrutamiento seguro para peatones basada en lógica difusa. Su sistema incorpora un detector de intención de cruce peatonal que evalúa en tiempo real el comportamiento del peatón en los pasos de cebra, combinándolo con indicadores estáticos de accidentalidad histórica para calcular una puntuación de seguridad para cada ruta candidata.
+
+Bao et al. \cite{bao2017} propusieron un algoritmo de búsqueda de rutas para peatones que asigna una puntuación de seguridad a cada segmento de la red viaria en función de las condiciones de iluminación y la presencia de referencias visuales. Su trabajo es pionero en la integración de la iluminación como factor explícito de seguridad peatonal en un sistema de enrutamiento.
+
+Chandra \cite{chandra2014} desarrolló un sistema de búsqueda de rutas basado en seguridad para conductores mayores y ciclistas en entornos urbanos, utilizando datos históricos de accidentes para identificar los segmentos de mayor riesgo y calcular rutas alternativas que los eviten.
+
+\subsection{Sistemas que combinan múltiples factores de riesgo}
+\label{subsec:trabajos_multifactor}
+
+La tendencia más reciente en la literatura apunta hacia sistemas que combinan múltiples indicadores de riesgo en una función de coste unificada. Soni et al. \cite{soni2019} combinan datos de accidentes y crímenes mediante una puntuación de riesgo ponderada. Puthige et al. (2021), citados en \cite{sohrabi2022}, integran riesgo de accidente y riesgo de crimen en un único índice de seguridad basado en aprendizaje automático.
+
+Este enfoque multi-factor es precisamente el que adopta el presente proyecto, que combina indicadores de iluminación, vulnerabilidad territorial y accidentalidad peatonal en una función de coste de seguridad única asignable a cada arista del grafo viario de Madrid (Sección~\ref{sec:funcion_coste}).
+
+% -----------------------------------------------------------------------
+% 2.3 METODOLOGÍAS POTENCIALES
+% -----------------------------------------------------------------------
+\section{Metodologías potenciales}
+\label{sec:metodologias}
+
+Del análisis de los trabajos relacionados se desprenden tres grandes aproximaciones metodológicas para la construcción de sistemas de enrutamiento seguro, que Sohrabi et al. \cite{sohrabi2022} clasifican según tres ejes: \textit{predictivo vs. reactivo}, \textit{estático vs. dinámico} y \textit{centralizado vs. descentralizado}.
+
+\textbf{Aproximación basada en puntuación (scoring)}: consiste en asignar una puntuación de seguridad a cada segmento de la red viaria combinando distintos indicadores mediante reglas definidas por el diseñador del sistema. Es la aproximación más interpretable y directamente integrable con algoritmos de enrutamiento clásicos como Dijkstra. Bao et al. \cite{bao2017} y Kaur et al. (2021), citados en \cite{sohrabi2022}, utilizan esta metodología. Es la aproximación adoptada en el presente proyecto por su transparencia y facilidad de justificación académica.
+
+\textbf{Aproximación basada en datos (data-driven)}: utiliza técnicas de aprendizaje automático (regresión, clustering, aprendizaje por refuerzo) para estimar el riesgo de cada segmento a partir de datos históricos. Permite capturar relaciones complejas entre variables, pero requiere grandes volúmenes de datos etiquetados y resulta menos interpretable. Levy et al. \cite{levy2020} y Soni et al. \cite{soni2019} utilizan esta aproximación.
+
+\textbf{Aproximación basada en indicadores de seguridad (safety indicators)}: utiliza variables proxy que actúan como indicadores indirectos del riesgo, como la presencia de iluminación, la anchura de la acera o la visibilidad del tramo. Lozano Domínguez y Mateo Sanguino \cite{lozano2021} combinan esta aproximación con lógica difusa para manejar la incertidumbre en la evaluación del riesgo.
+
+Para el presente proyecto se adopta una \textbf{aproximación híbrida de puntuación e indicadores}, que combina la asignación de puntuaciones normalizadas para cada indicador (iluminación, vulnerabilidad territorial, accidentalidad) con su agregación ponderada en una función de coste única. Esta elección se justifica por la disponibilidad de los datos, la interpretabilidad del resultado y su integración directa con pgRouting.
+
+% -----------------------------------------------------------------------
+% 2.4 TECNOLOGÍAS POTENCIALES
+% -----------------------------------------------------------------------
+\section{Tecnologías potenciales}
+\label{sec:tecnologias}
+
+\subsection{Bases de datos espaciales: PostgreSQL y PostGIS}
+\label{subsec:postgis}
+
+PostgreSQL es un sistema gestor de bases de datos relacional de código abierto ampliamente utilizado en proyectos académicos e industriales. La extensión PostGIS añade soporte para tipos de datos geométricos y geográficos (puntos, líneas, polígonos) y una biblioteca de más de 1.000 funciones espaciales que permiten realizar operaciones como cálculo de distancias, intersecciones, transformaciones entre sistemas de referencia de coordenadas y análisis de proximidad directamente mediante SQL. Es el estándar de facto en bases de datos espaciales de código abierto y es ampliamente utilizado en proyectos SIG de todo el mundo.
+
+\subsection{Motor de enrutamiento: pgRouting}
+\label{subsec:pgrouting}
+
+pgRouting es una extensión de PostgreSQL/PostGIS que añade funcionalidades de enrutamiento sobre grafos a la base de datos espacial. Implementa algoritmos clásicos de búsqueda de caminos mínimos (Dijkstra, A*, Bellman-Ford), así como algoritmos más avanzados como el problema del viajante de comercio (TSP) o el enrutamiento con giros. Su principal ventaja es que permite calcular rutas mediante consultas SQL directamente sobre la red viaria almacenada en la base de datos, sin necesidad de exportar los datos a herramientas externas. La función \texttt{pgr\_dijkstra} es la más utilizada y es la que se empleará en este proyecto.
+
+\subsection{Obtención de la red viaria: OpenStreetMap}
+\label{subsec:osm}
+
+OpenStreetMap (OSM) es un proyecto colaborativo de cartografía libre que proporciona datos geoespaciales de la red viaria a escala global con una granularidad y actualización superiores a las de muchas fuentes oficiales. Existen dos aproximaciones habituales para llevar estos datos a una base de datos PostgreSQL/PostGIS con la estructura topológica que requiere pgRouting. La primera es la herramienta \texttt{osm2pgrouting}, que importa directamente un extracto \texttt{.osm.pbf} y construye la tabla de nodos y de aristas con columnas \texttt{source}, \texttt{target} y \texttt{cost}. La segunda, adoptada finalmente en este proyecto, es la biblioteca Python \texttt{osmnx} \cite{boeing2017}, que descarga el grafo directamente desde la API de Overpass ya filtrado por tipo de red (en este caso, la red peatonal) y lo expone como un grafo de \texttt{networkx} manipulable en Python antes de cargarlo en la base de datos. Esta segunda opción se prefirió por integrarse mejor con el resto del proceso ETL, que ya está implementado en Python.
+
+\subsection{Visualización web: Leaflet}
+\label{subsec:leaflet}
+
+Leaflet es una biblioteca de JavaScript de código abierto para la creación de mapas web interactivos. Es ligera (menos de 40 KB), ampliamente documentada y compatible con los principales proveedores de teselas cartográficas (OpenStreetMap, Mapbox, Stamen). Permite visualizar capas GeoJSON, dibujar rutas sobre el mapa y añadir marcadores y popups interactivos, lo que la convierte en la herramienta idónea para el prototipo de visor cartográfico del presente proyecto.
+
+\subsection{Procesamiento de datos: Python y GeoPandas}
+\label{subsec:python}
+
+Python es el lenguaje de referencia en ciencia de datos y análisis geoespacial. La biblioteca GeoPandas extiende Pandas con soporte para geometrías espaciales y operaciones GIS, permitiendo leer, transformar y exportar datos en formatos como GeoJSON, Shapefile o CSV georreferenciado. Junto con psycopg2 (conector PostgreSQL para Python), SQLAlchemy y su extensión GeoAlchemy2 (que añade soporte para tipos de dato geométricos en las consultas SQLAlchemy), forma el stack tecnológico estándar para los procesos ETL de carga de datos espaciales en PostgreSQL/PostGIS.
+
+\subsection{Herramientas de escritorio: QGIS}
+\label{subsec:qgis}
+
+QGIS es un SIG de escritorio de código abierto que permite visualizar, editar y analizar datos espaciales de forma interactiva. Se utilizará como herramienta de apoyo para la validación visual de los datos cargados en la base de datos, la comprobación de la topología de la red viaria y la generación de figuras para la memoria del proyecto.

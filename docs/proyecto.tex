@@ -1,0 +1,236 @@
+\documentclass[a4paper,twoside,11pt]{book}
+
+% ----------------------------------------------------------------
+% PAQUETES ESENCIALES
+% ----------------------------------------------------------------
+\usepackage{listings}           % Para mostrar código fuente
+\usepackage[utf8]{inputenc}     % Codificación de caracteres (tildes, ñ...)
+\usepackage[spanish]{babel}     % Idioma español (separación silábica, fechas...)
+\usepackage[T1]{fontenc}        % Codificación de fuente correcta para español
+\usepackage{amsmath}   % Fórmulas matemáticas avanzadas
+\usepackage{amssymb}   % Símbolos matemáticos (\mathbb, etc.)
+\usepackage{pgfgantt}   % Diagramas de Gantt
+\usepackage{eurosym}    % Símbolo del euro (\euro)
+
+% ----------------------------------------------------------------
+% MATEMÁTICAS Y TABLAS
+% ----------------------------------------------------------------
+\decimalpoint
+\usepackage{dcolumn}
+\newcolumntype{.}{D{.}{\esperiod}{-1}}
+\makeatletter
+\addto\shorthandsspanish{\let\esperiod\es@period@code}
+\makeatother
+
+% ----------------------------------------------------------------
+% LAYOUT Y MÁRGENES
+% ----------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  top=3cm,
+  bottom=3cm,
+  inner=3.5cm,  % Margen interior (lomo) — se alterna izq/der según la página
+  outer=2.5cm   % Margen exterior — siempre al borde de la hoja
+}
+
+% ----------------------------------------------------------------
+% CABECERAS Y PIES DE PÁGINA
+% ----------------------------------------------------------------
+\RequirePackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{afterpage}
+\usepackage{longtable}
+
+% ----------------------------------------------------------------
+% ENLACES E HIPERVÍNCULOS (sin bordes visibles)
+% ----------------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+
+% ----------------------------------------------------------------
+% INFORMACIÓN DEL DOCUMENTO (cámbiala cuando quieras)
+% ----------------------------------------------------------------
+\newcommand{\myTitle}{Sistema de Cálculo de Rutas Seguras en Entornos Urbanos Mediante Análisis Espacial\xspace}
+\newcommand{\myDegree}{Grado en Ingeniería Informática\xspace}
+\newcommand{\myName}{Soto Zaragoza, Adriana\xspace}
+\newcommand{\myEmail}{asotoza@correo.ugr.es\xspace}  % <-- pon tu email real
+\newcommand{\myProf}{Samos Jiménez, José\xspace}
+\newcommand{\myOtherProf}{\xspace}
+\newcommand{\myFaculty}{Escuela Técnica Superior de Ingenierías Informática y de
+Telecomunicación\xspace}
+\newcommand{\myFacultyShort}{E.T.S. de Ingenierías Informática y de
+Telecomunicación\xspace}
+\newcommand{\myDepartment}{Departamento de Lenguajes y Sistemas Informáticos\xspace}
+\newcommand{\myUni}{\protect{Universidad de Granada}\xspace}
+\newcommand{\myLocation}{Granada\xspace}
+\newcommand{\myTime}{Junio de 2026\xspace}  % <-- fecha fija, mejor que \today
+\newcommand{\myVersion}{Versión 1.0\xspace}
+
+% Metadatos del PDF (visibles en "Propiedades del documento")
+\hypersetup{
+  pdfauthor   = {Adriana Soto Zaragoza},
+  pdftitle    = {Sistema de Cálculo de Rutas Seguras en Entornos Urbanos},
+  pdfsubject  = {Trabajo Fin de Grado - Ingeniería Informática - UGR},
+  pdfkeywords = {rutas seguras, SIG, PostGIS, pgRouting, Madrid, movilidad urbana},
+  pdfcreator  = {LaTeX},
+  pdfproducer = {pdflatex}
+}
+
+% ----------------------------------------------------------------
+% OTROS PAQUETES ÚTILES
+% ----------------------------------------------------------------
+\usepackage{url}
+\usepackage{colortbl}
+\usepackage[stable]{footmisc}   % Notas al pie estables
+\usepackage{pgfgantt}           % Diagramas de Gantt
+\usepackage{eurosym}            % Símbolo del euro (\euro)
+
+% ----------------------------------------------------------------
+% CONFIGURACIÓN DE CABECERAS (fancyhdr)
+% ----------------------------------------------------------------
+% IMPORTANTE: \headheight debe declararse ANTES de \pagestyle{fancy}
+\setlength{\headheight}{14pt}
+
+\pagestyle{fancy}
+\fancyhf{}  % Limpia cabecera y pie por defecto
+
+% Documento a doble cara (twoside):
+% LO = Left Odd  (izquierda en páginas impares)
+% RE = Right Even (derecha en páginas pares)
+% RO = Right Odd  (derecha en páginas impares)
+% LE = Left Even  (izquierda en páginas pares)
+\fancyhead[LO]{\small\leftmark}             % Capítulo en páginas impares (izq.)
+\fancyhead[RE]{\small\rightmark}            % Sección en páginas pares (der.)
+\fancyhead[RO,LE]{\small\textbf{\thepage}} % Nº página siempre al exterior
+\fancyfoot{}  % Sin pie de página
+
+% Grosor de la línea bajo la cabecera
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Formato del nombre de capítulo y sección en la cabecera
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter.\ #1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+
+% ----------------------------------------------------------------
+% COMANDOS DE APOYO
+% ----------------------------------------------------------------
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+% Entornos para teoremas, ejemplos y definiciones (útiles en cap. técnicos)
+\newtheorem{teorema}{Teorema}[chapter]
+\newtheorem{ejemplo}{Ejemplo}[chapter]
+\newtheorem{definicion}{Definición}[chapter]
+
+% ----------------------------------------------------------------
+% CONFIGURACIÓN DE BLOQUES DE CÓDIGO (listings)
+% Así se verá el código SQL, Python, etc. en los anexos
+% ----------------------------------------------------------------
+\usepackage{xcolor}
+\definecolor{colorFondo}{gray}{.97}
+\definecolor{colorComentario}{gray}{.45}
+
+\lstset{
+  frame=single,
+  framerule=0.5pt,
+  aboveskip=0.5cm,
+  backgroundcolor=\color{colorFondo},
+  stringstyle=\ttfamily,
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  commentstyle=\color{colorComentario}\itshape,
+  keywordstyle=\bfseries,
+  numbers=left,
+  numbersep=8pt,
+  numberstyle=\tiny\color{gray},
+  breaklines=true,
+  captionpos=b
+}
+
+% Estilo específico para SQL (útil para las consultas PostGIS/pgRouting)
+\lstdefinestyle{SQL}{
+  language=SQL,
+  morekeywords={ST_Distance, ST_Buffer, pgr_dijkstra, geography, geometry}
+}
+
+% Estilo para Python (útil para los scripts ETL)
+\lstdefinestyle{Python}{
+  language=Python
+}
+
+% ----------------------------------------------------------------
+% PÁGINAS EN BLANCO SIN CABECERA
+% ----------------------------------------------------------------
+\makeatletter
+\def\clearpage{%
+  \ifvmode
+    \ifnum \@dbltopnum =\m@ne
+      \ifdim \pagetotal <\topskip
+        \hbox{}
+      \fi
+    \fi
+  \fi
+  \newpage
+  \thispagestyle{empty}
+  \write\m@ne{}
+  \vbox{}
+  \penalty -\@Mi
+}
+\makeatother
+
+\usepackage{pdfpages}
+
+% ================================================================
+% INICIO DEL DOCUMENTO
+% ================================================================
+\begin{document}
+
+% ----------------------------------------------------------------
+% PÁGINAS PRELIMINARES (portada, declaración, resumen, etc.)
+% Estas páginas NO llevan numeración ni cabecera
+% ----------------------------------------------------------------
+\input{portada/portada}
+\input{prefacios/prefacio}
+
+% ----------------------------------------------------------------
+% ÍNDICES
+% frontmatter pone numeración romana (i, ii, iii...) para los índices
+% ----------------------------------------------------------------
+\frontmatter
+\tableofcontents         % Tabla de contenidos (obligatoria)
+\listoffigures           % Lista de figuras   (descomenta si tienes figuras)
+%\listoftables           % Lista de tablas    (descomenta si tienes tablas)
+
+% ----------------------------------------------------------------
+% CUERPO DEL DOCUMENTO
+% mainmatter pone numeración arábiga (1, 2, 3...) y activa las cabeceras
+% ----------------------------------------------------------------
+\mainmatter
+\setlength{\parskip}{6pt}    % Espacio entre párrafos
+\setlength{\parindent}{0pt}  % Sin sangría (estilo moderno)
+
+% --- Capítulos (descomenta cada uno cuando lo tengas escrito) ---
+\input{capitulos/01_Introduccion}
+\input{capitulos/02_EstadoDelArte}
+\input{capitulos/03_Propuesta}
+%\input{capitulos/04_Metodologia}
+%\input{capitulos/04_GestionProyecto}
+%\input{capitulos/06_PruebasValidacion}
+%\input{capitulos/07_Conclusiones}
+
+% ----------------------------------------------------------------
+% BIBLIOGRAFÍA
+% ----------------------------------------------------------------
+\backmatter
+\bibliographystyle{unsrt}
+\bibliography{bibliografia/bibliografia}
+\addcontentsline{toc}{chapter}{Bibliografía}
+
+% ----------------------------------------------------------------
+% APÉNDICES (descomenta cuando los tengas)
+% ----------------------------------------------------------------
+%\appendix
+%\input{apendices/apendice_etl}
+%\input{apendices/apendice_sql}
+
+\end{document}
