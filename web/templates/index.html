@@ -2,114 +2,492 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rutas Seguras Madrid</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-    #map { height: 100%; }
-    #panel {
-        position: absolute; top: 12px; right: 12px; z-index: 1000;
-        background: white; padding: 14px 16px; border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25); width: 260px; font-size: 14px;
+    :root {
+        --azul: #1a73e8;
+        --azul-oscuro: #174ea6;
+        --verde: #188038;
+        --verde-suave: #e6f4ea;
+        --rojo: #d93025;
+        --rojo-suave: #fce8e6;
+        --naranja: #e37400;
+        --texto: #202124;
+        --texto-suave: #5f6368;
+        --borde: #dadce0;
+        --fondo-suave: #f8f9fa;
+        --radio: 14px;
+        --sombra: 0 1px 3px rgba(32,33,36,0.18), 0 4px 12px rgba(32,33,36,0.1);
     }
-    #panel h1 { font-size: 16px; margin: 0 0 8px; }
-    #panel p.ayuda { color: #555; margin: 0 0 10px; }
-    .ruta { margin-bottom: 8px; padding: 6px 8px; border-radius: 4px; }
-    .ruta.rapida { background: #e8f0fe; border-left: 4px solid #1a73e8; }
-    .ruta.segura { background: #e6f4ea; border-left: 4px solid #188038; }
-    .ruta strong { display: block; }
-    #limpiar { margin-top: 6px; width: 100%; padding: 6px; cursor: pointer; }
-    #error { color: #c5221f; margin-top: 8px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; color: var(--texto); }
+    #app { display: flex; height: 100%; }
+    #map { flex: 1; }
+
+    #panel {
+        width: 380px; min-width: 380px; height: 100%; overflow-y: auto;
+        background: white; box-shadow: var(--sombra); z-index: 1000;
+        display: flex; flex-direction: column;
+        padding: 20px; gap: 14px;
+    }
+    #panel h1 { font-size: 18px; margin: 0; }
+    #panel .subtitulo { font-size: 13px; color: var(--texto-suave); margin: -8px 0 0; }
+
+    .modo-toggle {
+        display: flex; background: var(--fondo-suave); border-radius: 999px; padding: 3px;
+    }
+    .modo-toggle button {
+        flex: 1; border: none; background: transparent; padding: 8px 10px; border-radius: 999px;
+        font-size: 13px; font-weight: 600; color: var(--texto-suave); cursor: pointer; transition: all .15s;
+    }
+    .modo-toggle button.activo { background: white; color: var(--azul); box-shadow: var(--sombra); }
+
+    .campo { position: relative; }
+    .campo label { display: block; font-size: 12px; font-weight: 600; color: var(--texto-suave); margin-bottom: 4px; }
+    .input-wrap {
+        display: flex; align-items: center; gap: 8px;
+        border: 1px solid var(--borde); border-radius: 10px; padding: 0 10px;
+        background: var(--fondo-suave);
+    }
+    .input-wrap:focus-within { border-color: var(--azul); background: white; }
+    .input-wrap svg { flex-shrink: 0; color: var(--texto-suave); }
+    .input-wrap input {
+        border: none; background: transparent; outline: none; padding: 10px 0; font-size: 14px;
+        width: 100%; color: var(--texto);
+    }
+    .input-wrap button.icono {
+        border: none; background: transparent; cursor: pointer; padding: 6px; border-radius: 50%;
+        display: flex; color: var(--azul);
+    }
+    .input-wrap button.icono:hover { background: #e8f0fe; }
+
+    #boton-swap {
+        align-self: center; margin: -10px 0; border: 1px solid var(--borde); background: white;
+        border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--texto-suave);
+        display: flex; align-items: center; justify-content: center; box-shadow: var(--sombra);
+    }
+    #boton-swap:hover { color: var(--azul); }
+
+    .sugerencias {
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 1100;
+        list-style: none; margin: 4px 0 0; padding: 6px; background: white;
+        border-radius: 10px; box-shadow: var(--sombra); max-height: 220px; overflow-y: auto;
+    }
+    .sugerencias li { padding: 8px 10px; font-size: 13px; border-radius: 6px; cursor: pointer; }
+    .sugerencias li:hover, .sugerencias li.activa { background: var(--fondo-suave); }
+    .sugerencias li.mensaje { color: var(--texto-suave); cursor: default; }
+
+    #resultados { display: flex; flex-direction: column; gap: 12px; }
+    .ayuda { font-size: 13px; color: var(--texto-suave); line-height: 1.5; }
+
+    .tarjeta-simple {
+        border-radius: var(--radio); padding: 16px; background: var(--verde-suave); border: 1px solid #b7e1c1;
+    }
+    .tarjeta-simple .cabecera { display: flex; justify-content: space-between; align-items: baseline; }
+    .tarjeta-simple .distancia { font-size: 22px; font-weight: 700; }
+    .tarjeta-simple .duracion { font-size: 13px; color: var(--texto-suave); }
+    .insignia {
+        display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+        margin-top: 8px;
+    }
+    .insignia.buena { background: #ceead6; color: var(--verde); }
+    .insignia.media { background: #feefc3; color: #b06000; }
+    .insignia.mala { background: var(--rojo-suave); color: var(--rojo); }
+    .tarjeta-simple .explicacion { font-size: 13px; color: var(--texto-suave); margin-top: 10px; line-height: 1.5; }
+    .enlace { background: none; border: none; color: var(--azul); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 10px; }
+
+    .tarjeta-ruta { border-radius: 10px; padding: 12px 14px; border-left: 4px solid; font-size: 13px; }
+    .tarjeta-ruta.rapida { background: #e8f0fe; border-color: var(--azul); }
+    .tarjeta-ruta.segura { background: var(--verde-suave); border-color: var(--verde); }
+    .tarjeta-ruta strong { display: block; font-size: 14px; margin-bottom: 2px; }
+
+    table.comparativa { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.comparativa th { text-align: left; font-weight: 600; color: var(--texto-suave); padding: 6px 4px; border-bottom: 1px solid var(--borde); }
+    table.comparativa td { padding: 7px 4px; border-bottom: 1px solid #f1f3f4; }
+    table.comparativa td.num { text-align: right; }
+    .delta { display: inline-block; font-weight: 700; margin-left: 4px; }
+    .delta.mejor { color: var(--verde); }
+    .delta.peor { color: var(--rojo); }
+    .delta.neutro { color: var(--texto-suave); }
+
+    #limpiar {
+        margin-top: auto; padding: 10px; border: 1px solid var(--borde); background: white;
+        border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--texto-suave); cursor: pointer;
+    }
+    #limpiar:hover { background: var(--fondo-suave); }
+
+    #error { color: var(--rojo); background: var(--rojo-suave); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+    .spinner {
+        width: 16px; height: 16px; border: 2px solid #c8d7f5; border-top-color: var(--azul);
+        border-radius: 50%; display: inline-block; animation: girar .7s linear infinite; vertical-align: -3px;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .leyenda { display: flex; gap: 14px; font-size: 12px; color: var(--texto-suave); }
+    .leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+    .leyenda .linea { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+
+    .pin-destino {
+        width: 26px; height: 26px; background: var(--rojo); border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg); box-shadow: 0 1px 4px rgba(0,0,0,.45); border: 2px solid white;
+    }
+    .pin-origen {
+        width: 16px; height: 16px; border-radius: 50%; background: var(--azul);
+        border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,.45);
+    }
+
+    @media (max-width: 720px) {
+        #app { flex-direction: column; }
+        #panel { width: 100%; min-width: 0; height: auto; max-height: 55vh; order: 2; }
+        #map { order: 1; flex: 1; }
+    }
 </style>
 </head>
 <body>
-<div id="map"></div>
-<div id="panel">
-    <h1>Rutas Seguras Madrid</h1>
-    <p class="ayuda">Haz clic en el mapa para el origen y luego para el destino.</p>
-    <div id="resultados"></div>
-    <button id="limpiar">Limpiar</button>
+<div id="app">
+    <aside id="panel">
+        <h1>Rutas Seguras Madrid</h1>
+        <p class="subtitulo">Encuentra el camino más seguro para ir andando</p>
+
+        <div class="modo-toggle">
+            <button id="modo-simple" class="activo" data-modo="simple">Simple</button>
+            <button id="modo-detallado" data-modo="detallado">Detallado</button>
+        </div>
+
+        <div class="campo">
+            <label for="input-origen">Origen</label>
+            <div class="input-wrap">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="currentColor"/><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg>
+                <input id="input-origen" placeholder="Escribe una dirección o haz clic en el mapa" autocomplete="off">
+                <button class="icono" id="boton-ubicacion" title="Usar mi ubicación">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                </button>
+            </div>
+            <ul class="sugerencias" id="sugerencias-origen" hidden></ul>
+        </div>
+
+        <button id="boton-swap" title="Intercambiar origen y destino">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3L5 7h3v10H6l4 4 4-4h-2V7h3L9 3z" transform="rotate(90 12 12)"/></svg>
+        </button>
+
+        <div class="campo">
+            <label for="input-destino">Destino</label>
+            <div class="input-wrap">
+                <div class="pin-destino" style="width:12px;height:12px;flex-shrink:0;"></div>
+                <input id="input-destino" placeholder="Escribe una dirección o haz clic en el mapa" autocomplete="off">
+            </div>
+            <ul class="sugerencias" id="sugerencias-destino" hidden></ul>
+        </div>
+
+        <div id="resultados">
+            <p class="ayuda">Elige un origen y un destino escribiendo una dirección o haciendo clic en el mapa. En modo <strong>Simple</strong> verás la ruta recomendada; en modo <strong>Detallado</strong>, la comparativa completa con la ruta más rápida.</p>
+        </div>
+
+        <button id="limpiar">Limpiar</button>
+    </aside>
+    <div id="map"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([40.4168, -3.7038], 13);
+const map = L.map('map', { zoomControl: false }).setView([40.4168, -3.7038], 13);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
 }).addTo(map);
 
+const ICONO_ORIGEN = L.divIcon({ className: '', html: '<div class="pin-origen"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+const ICONO_DESTINO = L.divIcon({ className: '', html: '<div class="pin-destino"></div>', iconSize: [26, 26], iconAnchor: [13, 24] });
+
+const ESTILO_HALO = { color: '#ffffff', weight: 9, opacity: 0.9 };
 const ESTILOS = {
-    rapida: { color: '#1a73e8', weight: 5, opacity: 0.8, dashArray: '8 6' },
-    segura: { color: '#188038', weight: 5, opacity: 0.8 },
+    rapida: { color: '#1a73e8', weight: 4, opacity: 0.85, dashArray: '8 6' },
+    segura: { color: '#188038', weight: 5, opacity: 0.9 },
 };
 
-let origen = null;
-let destino = null;
-let marcadorOrigen = null;
-let marcadorDestino = null;
-let capasRutas = [];
+const NOMBRES = { rapida: 'Ruta rápida', segura: 'Ruta segura' };
+const UMBRAL_MS_KM = 1000 / (5000 / 60); // minutos por km a 5 km/h, no usado directamente
 
-function limpiar() {
-    origen = null;
-    destino = null;
-    if (marcadorOrigen) map.removeLayer(marcadorOrigen);
-    if (marcadorDestino) map.removeLayer(marcadorDestino);
-    capasRutas.forEach(capa => map.removeLayer(capa));
-    capasRutas = [];
-    marcadorOrigen = null;
-    marcadorDestino = null;
-    document.getElementById('resultados').innerHTML = '';
+const estado = {
+    modo: 'simple',
+    origen: null,   // { lon, lat, nombre }
+    destino: null,
+    marcadorOrigen: null,
+    marcadorDestino: null,
+    capasRutas: [],
+    ultimaRespuesta: null,
+};
+
+// ---------- utilidades ----------
+
+function debounce(fn, ms) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), ms);
+    };
 }
 
-document.getElementById('limpiar').addEventListener('click', limpiar);
+function badgeSeguridad(peligrosidad) {
+    if (peligrosidad < 0.2) return { texto: 'Muy segura', clase: 'buena' };
+    if (peligrosidad < 0.35) return { texto: 'Segura', clase: 'buena' };
+    if (peligrosidad < 0.5) return { texto: 'Moderada', clase: 'media' };
+    return { texto: 'Precaución', clase: 'mala' };
+}
 
-map.on('click', (e) => {
-    const { lat, lng } = e.latlng;
-    if (!origen) {
-        limpiar();
-        origen = [lng, lat];
-        marcadorOrigen = L.marker([lat, lng], { title: 'Origen' }).addTo(map);
-    } else if (!destino) {
-        destino = [lng, lat];
-        marcadorDestino = L.marker([lat, lng], { title: 'Destino' }).addTo(map);
-        calcularRutas();
-    }
-});
+function formatoDistancia(m) {
+    return m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
+}
 
-async function calcularRutas() {
-    document.getElementById('resultados').innerHTML = '<p>Calculando rutas...</p>';
-    const params = new URLSearchParams({
-        origen_lon: origen[0], origen_lat: origen[1],
-        destino_lon: destino[0], destino_lat: destino[1],
-    });
-    let datos;
+function formatoDuracion(min) {
+    if (min < 60) return `${Math.round(min)} min`;
+    const h = Math.floor(min / 60);
+    const resto = Math.round(min % 60);
+    return `${h} h ${resto} min`;
+}
+
+// delta: valor de "segura" respecto a "rapida". mejorSiMenor=true cuando bajar es mejor.
+function badgeDelta(valorSegura, valorRapida, mejorSiMenor, sufijo = '') {
+    if (valorRapida === 0) return '';
+    const cambio = ((valorSegura - valorRapida) / Math.abs(valorRapida)) * 100;
+    if (Math.abs(cambio) < 1) return '<span class="delta neutro">≈ igual</span>';
+    const esMejor = mejorSiMenor ? cambio < 0 : cambio > 0;
+    const signo = cambio > 0 ? '+' : '';
+    return `<span class="delta ${esMejor ? 'mejor' : 'peor'}">${signo}${cambio.toFixed(0)}%${sufijo}</span>`;
+}
+
+// ---------- geocodificación ----------
+
+async function buscarSugerencias(campo, texto) {
+    const lista = document.getElementById(`sugerencias-${campo}`);
+    if (texto.trim().length < 3) { lista.hidden = true; lista.innerHTML = ''; return; }
+
+    lista.hidden = false;
+    lista.innerHTML = '<li class="mensaje">Buscando…</li>';
+
+    let resultados;
     try {
-        const resp = await fetch(`/api/ruta?${params}`);
-        datos = await resp.json();
-        if (!resp.ok) throw new Error(datos.error || 'Error al calcular la ruta');
+        const resp = await fetch(`/api/geocode?q=${encodeURIComponent(texto)}`);
+        resultados = await resp.json();
     } catch (err) {
-        document.getElementById('resultados').innerHTML = `<div id="error">${err.message}</div>`;
+        lista.innerHTML = '<li class="mensaje">No se pudo buscar la dirección</li>';
         return;
     }
 
-    const nombres = { rapida: 'Ruta rápida', segura: 'Ruta segura' };
-    let html = '';
-    for (const criterio of ['segura', 'rapida']) {
-        const ruta = datos[criterio];
-        const capa = L.geoJSON(ruta.geometry, { style: ESTILOS[criterio] }).addTo(map);
-        capasRutas.push(capa);
-        html += `
-            <div class="ruta ${criterio}">
-                <strong>${nombres[criterio]}</strong>
-                ${(ruta.distancia_m / 1000).toFixed(2)} km ·
-                peligrosidad media ${ruta.peligrosidad_media.toFixed(3)}
-            </div>`;
+    if (!Array.isArray(resultados) || resultados.length === 0) {
+        lista.innerHTML = '<li class="mensaje">Sin resultados</li>';
+        return;
     }
-    document.getElementById('resultados').innerHTML = html;
 
-    const grupo = new L.featureGroup(capasRutas);
-    map.fitBounds(grupo.getBounds(), { padding: [30, 30] });
+    lista.innerHTML = '';
+    resultados.forEach((r) => {
+        const li = document.createElement('li');
+        li.textContent = r.nombre;
+        li.addEventListener('click', () => seleccionarPunto(campo, { lon: r.lon, lat: r.lat, nombre: r.nombre }));
+        lista.appendChild(li);
+    });
 }
+
+async function geocodificarInverso(lon, lat) {
+    try {
+        const resp = await fetch(`/api/geocode/inverso?lon=${lon}&lat=${lat}`);
+        const datos = await resp.json();
+        return datos.nombre || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    } catch (err) {
+        return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+}
+
+// ---------- selección de puntos ----------
+
+function seleccionarPunto(campo, punto) {
+    document.getElementById(`sugerencias-${campo}`).hidden = true;
+    document.getElementById(`input-${campo}`).value = punto.nombre;
+
+    if (campo === 'origen') {
+        estado.origen = punto;
+        if (estado.marcadorOrigen) map.removeLayer(estado.marcadorOrigen);
+        estado.marcadorOrigen = L.marker([punto.lat, punto.lon], { icon: ICONO_ORIGEN }).addTo(map);
+    } else {
+        estado.destino = punto;
+        if (estado.marcadorDestino) map.removeLayer(estado.marcadorDestino);
+        estado.marcadorDestino = L.marker([punto.lat, punto.lon], { icon: ICONO_DESTINO }).addTo(map);
+    }
+
+    if (estado.origen && estado.destino) calcularRutas();
+}
+
+document.getElementById('input-origen').addEventListener('input', debounce((e) => buscarSugerencias('origen', e.target.value), 400));
+document.getElementById('input-destino').addEventListener('input', debounce((e) => buscarSugerencias('destino', e.target.value), 400));
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.campo')) {
+        document.getElementById('sugerencias-origen').hidden = true;
+        document.getElementById('sugerencias-destino').hidden = true;
+    }
+});
+
+document.getElementById('boton-ubicacion').addEventListener('click', () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { longitude: lon, latitude: lat } = pos.coords;
+        const nombre = await geocodificarInverso(lon, lat);
+        seleccionarPunto('origen', { lon, lat, nombre });
+    });
+});
+
+document.getElementById('boton-swap').addEventListener('click', () => {
+    const origenPrevio = estado.origen;
+    const destinoPrevio = estado.destino;
+    limpiar();
+    if (destinoPrevio) seleccionarPunto('origen', destinoPrevio);
+    if (origenPrevio) seleccionarPunto('destino', origenPrevio);
+});
+
+map.on('click', async (e) => {
+    const { lat, lng } = e.latlng;
+    const campo = !estado.origen ? 'origen' : (!estado.destino ? 'destino' : null);
+    if (campo === null) {
+        limpiar();
+        const nombre = await geocodificarInverso(lng, lat);
+        seleccionarPunto('origen', { lon: lng, lat, nombre });
+        return;
+    }
+    const nombre = await geocodificarInverso(lng, lat);
+    seleccionarPunto(campo, { lon: lng, lat, nombre });
+});
+
+// ---------- modos ----------
+
+function cambiarModo(modo) {
+    estado.modo = modo;
+    document.getElementById('modo-simple').classList.toggle('activo', modo === 'simple');
+    document.getElementById('modo-detallado').classList.toggle('activo', modo === 'detallado');
+    if (estado.ultimaRespuesta) renderizarResultado(estado.ultimaRespuesta);
+}
+document.getElementById('modo-simple').addEventListener('click', () => cambiarModo('simple'));
+document.getElementById('modo-detallado').addEventListener('click', () => cambiarModo('detallado'));
+
+// ---------- cálculo y render de rutas ----------
+
+function limpiarCapasRutas() {
+    estado.capasRutas.forEach((capa) => map.removeLayer(capa));
+    estado.capasRutas = [];
+}
+
+function dibujarRuta(criterio, geometry, conHalo) {
+    if (conHalo) {
+        const halo = L.geoJSON(geometry, { style: ESTILO_HALO }).addTo(map);
+        estado.capasRutas.push(halo);
+    }
+    const capa = L.geoJSON(geometry, { style: ESTILOS[criterio] }).addTo(map);
+    estado.capasRutas.push(capa);
+}
+
+async function calcularRutas() {
+    document.getElementById('resultados').innerHTML = '<p class="ayuda"><span class="spinner"></span> Calculando rutas…</p>';
+    const params = new URLSearchParams({
+        origen_lon: estado.origen.lon, origen_lat: estado.origen.lat,
+        destino_lon: estado.destino.lon, destino_lat: estado.destino.lat,
+    });
+
+    try {
+        const resp = await fetch(`/api/ruta?${params}`);
+        const datos = await resp.json();
+        if (!resp.ok) throw new Error(datos.error || 'No se ha podido calcular la ruta');
+        estado.ultimaRespuesta = datos;
+        renderizarResultado(datos);
+    } catch (err) {
+        document.getElementById('resultados').innerHTML = `<div id="error">${err.message}</div>`;
+    }
+}
+
+function renderizarResultado(datos) {
+    limpiarCapasRutas();
+    if (estado.modo === 'simple') renderizarSimple(datos);
+    else renderizarDetallado(datos);
+
+    const grupo = L.featureGroup(estado.capasRutas);
+    if (grupo.getBounds().isValid()) map.fitBounds(grupo.getBounds(), { padding: [40, 40] });
+}
+
+function renderizarSimple(datos) {
+    const ruta = datos.segura;
+    dibujarRuta('segura', ruta.geometry, true);
+
+    const badge = badgeSeguridad(ruta.peligrosidad_media);
+    document.getElementById('resultados').innerHTML = `
+        <div class="tarjeta-simple">
+            <div class="cabecera">
+                <span class="distancia">${formatoDistancia(ruta.distancia_m)}</span>
+                <span class="duracion">${formatoDuracion(ruta.duracion_min)} andando</span>
+            </div>
+            <span class="insignia ${badge.clase}">${badge.texto}</span>
+            <p class="explicacion">Ruta calculada priorizando calles bien iluminadas, con menos accidentes y atropellos registrados cerca.</p>
+            <button class="enlace" id="ver-detalle">Ver comparativa con la ruta más rápida →</button>
+        </div>`;
+    document.getElementById('ver-detalle').addEventListener('click', () => cambiarModo('detallado'));
+}
+
+function renderizarDetallado(datos) {
+    dibujarRuta('rapida', datos.rapida.geometry, false);
+    dibujarRuta('segura', datos.segura.geometry, true);
+
+    const r = datos.rapida;
+    const s = datos.segura;
+
+    const filas = [
+        ['Distancia', formatoDistancia(r.distancia_m), formatoDistancia(s.distancia_m), badgeDelta(s.distancia_m, r.distancia_m, true)],
+        ['Duración', formatoDuracion(r.duracion_min), formatoDuracion(s.duracion_min), badgeDelta(s.duracion_min, r.duracion_min, true)],
+        ['Peligrosidad media', r.peligrosidad_media.toFixed(2), s.peligrosidad_media.toFixed(2), badgeDelta(s.peligrosidad_media, r.peligrosidad_media, true)],
+        ['Iluminación (farolas/100m)', r.iluminacion_media, s.iluminacion_media, badgeDelta(s.iluminacion_media, r.iluminacion_media, false)],
+        ['Accidentes cercanos (/100m)', r.accidentes_media, s.accidentes_media, badgeDelta(s.accidentes_media, r.accidentes_media, true)],
+        ['Atropellos registrados', r.atropellos_total, s.atropellos_total, badgeDelta(s.atropellos_total, r.atropellos_total, true)],
+        ['Vulnerabilidad del distrito', r.vulnerabilidad_media, s.vulnerabilidad_media, badgeDelta(s.vulnerabilidad_media, r.vulnerabilidad_media, true)],
+    ];
+
+    const filasHtml = filas.map(([nombre, valR, valS, delta]) => `
+        <tr>
+            <td>${nombre}</td>
+            <td class="num">${valR}</td>
+            <td class="num">${valS} ${delta}</td>
+        </tr>`).join('');
+
+    document.getElementById('resultados').innerHTML = `
+        <div class="leyenda">
+            <span><span class="linea" style="background:#1a73e8; border-top: 2px dashed #1a73e8; background: transparent;"></span> Rápida</span>
+            <span><span class="linea" style="background:#188038;"></span> Segura</span>
+        </div>
+        <div class="tarjeta-ruta rapida"><strong>${NOMBRES.rapida}</strong>${formatoDistancia(r.distancia_m)} · ${formatoDuracion(r.duracion_min)}</div>
+        <div class="tarjeta-ruta segura"><strong>${NOMBRES.segura}</strong>${formatoDistancia(s.distancia_m)} · ${formatoDuracion(s.duracion_min)}</div>
+        <div style="overflow-x:auto;">
+        <table class="comparativa">
+            <thead><tr><th></th><th>Rápida</th><th>Segura</th></tr></thead>
+            <tbody>${filasHtml}</tbody>
+        </table>
+        </div>
+        <p class="ayuda">Los valores de "Segura" muestran en verde cuando mejoran respecto a la ruta rápida, y en rojo cuando empeoran.</p>`;
+}
+
+// ---------- limpiar ----------
+
+function limpiar() {
+    estado.origen = null;
+    estado.destino = null;
+    estado.ultimaRespuesta = null;
+    if (estado.marcadorOrigen) map.removeLayer(estado.marcadorOrigen);
+    if (estado.marcadorDestino) map.removeLayer(estado.marcadorDestino);
+    estado.marcadorOrigen = null;
+    estado.marcadorDestino = null;
+    limpiarCapasRutas();
+    document.getElementById('input-origen').value = '';
+    document.getElementById('input-destino').value = '';
+    document.getElementById('resultados').innerHTML =
+        '<p class="ayuda">Elige un origen y un destino escribiendo una dirección o haciendo clic en el mapa.</p>';
+}
+document.getElementById('limpiar').addEventListener('click', limpiar);
 </script>
 </body>
 </html>
