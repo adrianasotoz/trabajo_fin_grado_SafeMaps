@@ -2,7 +2,7 @@
 
 TFG de Ingeniería Informática — Universidad, Madrid.
 
-Sistema que calcula rutas peatonales seguras en Madrid combinando la red viaria de OpenStreetMap con datos de iluminación pública, accidentes/atropellos y vulnerabilidad territorial para generar un índice de seguridad por tramo, y ofrece un visor web para comparar la ruta más rápida con la más segura entre dos puntos.
+Sistema que calcula rutas peatonales seguras en Madrid combinando la red viaria de OpenStreetMap con datos de iluminación pública, accidentes/atropellos y vulnerabilidad territorial para generar un índice de seguridad por tramo, y ofrece un visor web con buscador de direcciones para comparar la ruta más rápida con la más segura entre dos puntos.
 
 ---
 
@@ -141,4 +141,11 @@ Calcula la ruta más rápida y la más segura entre dos puntos de ejemplo y las 
 python web/app.py
 ```
 
-Abre `http://127.0.0.1:5000/`, haz clic en el mapa para marcar el origen y luego el destino: se dibujan la ruta más rápida y la más segura, con su distancia y peligrosidad media.
+Abre `http://127.0.0.1:5000/`. Marca el origen y el destino escribiendo una dirección (autocompletado vía Nominatim/OSM), usando el botón de geolocalización, o haciendo clic directamente en el mapa. Requiere conexión a internet para el buscador (llama a `nominatim.openstreetmap.org`).
+
+El visor tiene dos modos, seleccionables en la parte superior del panel:
+
+- **Simple** — muestra solo la ruta recomendada (la más segura), con distancia, duración estimada a pie y una insignia de nivel de seguridad (Muy segura / Segura / Moderada / Precaución).
+- **Detallado** — dibuja ambas rutas (rápida y segura) y una tabla comparativa tramo a tramo: distancia, duración, peligrosidad media, iluminación, accidentes cercanos, atropellos registrados y vulnerabilidad del distrito, con indicadores en verde/rojo de en qué mejora o empeora la ruta segura frente a la rápida.
+
+Otros detalles: botón para intercambiar origen y destino, y `GET /api/geocode` / `GET /api/geocode/inverso` como proxy propio a Nominatim (autocompletado y clic en el mapa).
