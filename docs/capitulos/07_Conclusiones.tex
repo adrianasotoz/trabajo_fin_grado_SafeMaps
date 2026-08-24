@@ -1,0 +1,90 @@
+\chapter{Conclusiones y trabajos futuros}
+\label{cap:conclusiones}
+
+Este capítulo cierra la memoria evaluando en qué medida se han alcanzado los objetivos planteados en el Capítulo~\ref{cap:introduccion} y la hipótesis de partida, recogiendo de forma unificada las limitaciones del sistema ya señaladas a lo largo de los capítulos anteriores, y proponiendo las líneas de trabajo futuro que se derivan directamente de ellas.
+
+% -----------------------------------------------------------------------
+% 7.1 GRADO DE CUMPLIMIENTO DE LOS OBJETIVOS
+% -----------------------------------------------------------------------
+\section{Grado de cumplimiento de los objetivos}
+\label{sec:cumplimiento_objetivos}
+
+El objetivo general (Sección~\ref{subsec:objetivo_general}) —diseñar y desarrollar un sistema de cálculo de rutas seguras para peatones en Madrid, integrando iluminación, vulnerabilidad territorial y accidentalidad mediante enrutamiento sobre grafos ponderados— se considera \textbf{alcanzado}: el Capítulo~\ref{cap:pruebas} ha demostrado, sobre casos concretos, que el sistema resultante ofrece efectivamente una alternativa medible en seguridad a la ruta más corta convencional. La Tabla~\ref{tab:cumplimiento_oe} detalla el grado de cumplimiento de cada uno de los seis objetivos específicos (Sección~\ref{subsec:objetivos_especificos}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{1.6cm}p{10.5cm}}
+\hline
+\textbf{Objetivo} & \textbf{Evidencia de cumplimiento} \\
+\hline
+OE1 & Los cuatro conjuntos de datos (iluminación, vulnerabilidad, accidentes, distritos) se han extraído, limpiado y proyectado a un sistema de referencia común mediante los scripts \texttt{03} a \texttt{06} (Sección~\ref{sec:metodologia_desarrollo}), con un patrón ETL uniforme e idempotente. \\
+\hline
+OE2 & El esquema de \texttt{safe\_maps} (Sección~\ref{sec:esquema_bd}) modela la red viaria de Madrid como grafo \texttt{nodes}/\texttt{edges} en PostgreSQL/PostGIS, con más de 524\,000 tramos y los indicadores de riesgo asociados como columnas de \texttt{edges}. \\
+\hline
+OE3 & La función de coste (Ecuaciones~\ref{eq:coste} y~\ref{eq:coste_seguro}, Sección~\ref{sec:funcion_coste}) combina los cuatro indicadores en un índice de peligrosidad normalizado en $[0,1]$, con pesos justificados y una constante $\alpha$ ajustada empíricamente. \\
+\hline
+OE4 & El motor de enrutamiento (Sección~\ref{sec:enrutamiento}), implementado sobre \texttt{pgr\_dijkstra} y expuesto mediante \texttt{rutas.py}, calcula la ruta óptima según el criterio rápido o seguro entre dos coordenadas cualesquiera de la red. \\
+\hline
+OE5 & El prototipo de visor web (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}) permite introducir origen y destino mediante búsqueda por dirección, geolocalización o clic en el mapa, y visualizar y comparar ambas rutas en dos modos de uso. \\
+\hline
+OE6 & El Capítulo~\ref{cap:pruebas} ha evaluado cuantitativamente ocho pares origen-destino representativos, obteniendo una reducción agregada del 50.7\,\% en atropellos y del 13.9\,\% de media en peligrosidad a cambio de un incremento del 3.7\,\% en distancia. \\
+\hline
+\end{tabular}
+\caption{Grado de cumplimiento de los objetivos específicos del TFG.}
+\label{tab:cumplimiento_oe}
+\end{table}
+
+Los seis objetivos específicos se consideran, por tanto, \textbf{cumplidos}. No obstante, como se detalla en la Sección~\ref{sec:limitaciones_sistema}, el grado de cumplimiento de OE6 debe matizarse: la evaluación realizada es cuantitativa e interna, no una validación externa con datos de desenlace real ni con usuarios.
+
+% -----------------------------------------------------------------------
+% 7.2 VERIFICACIÓN DE LA HIPÓTESIS
+% -----------------------------------------------------------------------
+\section{Verificación de la hipótesis}
+\label{sec:verificacion_hipotesis}
+
+La hipótesis de partida (Sección~\ref{subsec:hipotesis}) afirmaba que es posible calcular rutas peatonales que reduzcan la exposición a factores de riesgo urbano con un incremento asumible de distancia o tiempo de recorrido. Los resultados del Capítulo~\ref{cap:pruebas} \textbf{confirman la hipótesis} dentro del alcance evaluado: un incremento agregado del 3.7\,\% en distancia se corresponde con una reducción del 50.7\,\% en el número total de atropellos y del 13.9\,\% de media en el índice de peligrosidad (Sección~\ref{sec:resultados_comparativos}), una relación coste-beneficio favorable y del mismo orden cualitativo que la documentada por Sohrabi et al.\ \cite{sohrabi2022} para el ámbito vehicular. Esta confirmación está sujeta a las limitaciones de la propia validación, discutidas en la Sección~\ref{sec:limitaciones_validacion} y retomadas a continuación.
+
+% -----------------------------------------------------------------------
+% 7.3 LIMITACIONES DEL SISTEMA
+% -----------------------------------------------------------------------
+\section{Limitaciones del sistema}
+\label{sec:limitaciones_sistema}
+
+A lo largo de la memoria se han ido señalando limitaciones puntuales del sistema en el punto en que resultaban relevantes. Esta sección las recoge de forma unificada, agrupadas en tres categorías:
+
+\textbf{Limitaciones de los datos de entrada.} No existe una fuente pública de criminalidad con desagregación geográfica para Madrid (Sección~\ref{sec:motivacion}), por lo que el sistema aproxima la seguridad ciudadana mediante un índice de vulnerabilidad territorial agregado por distrito (Sección~\ref{subsec:vulnerabilidad_datos}). Se trata de una variable \textit{proxy}, agregada a una granularidad muy superior a la del resto de indicadores (por distrito, frente al segmento de calle individual), y no de una medida directa de criminalidad.
+
+\textbf{Limitaciones del modelo de coste.} El índice de peligrosidad es único e independiente de la hora del día (Sección~\ref{sec:vision_general}): no se distingue entre exposición diurna y nocturna, a pesar de que la literatura documenta variaciones significativas del riesgo de criminalidad en esa franja \cite{levy2020}. Esta simplificación se adoptó por la falta de una segmentación horaria robusta en los datos de accidentalidad disponibles y por la ausencia, ya mencionada, de un indicador de criminalidad real que justificara empíricamente una ponderación temporal.
+
+\textbf{Limitaciones de la validación.} Como se detalló en la Sección~\ref{sec:limitaciones_validacion}, la evaluación del Capítulo~\ref{cap:pruebas} es interna —compara la ruta segura con la rápida usando los mismos indicadores que alimentan la función de coste, sin contraste contra un desenlace real independiente—, se apoya en una muestra reducida y deliberadamente no aleatoria de ocho pares origen-destino, y no incluye ninguna prueba de usabilidad o de percepción de seguridad con personas reales sobre el visor web.
+
+% -----------------------------------------------------------------------
+% 7.4 LÍNEAS DE TRABAJO FUTURO
+% -----------------------------------------------------------------------
+\section{Líneas de trabajo futuro}
+\label{sec:trabajo_futuro}
+
+Cada limitación de la Sección~\ref{sec:limitaciones_sistema} define una línea de trabajo futuro directa:
+
+\begin{enumerate}
+    \item \textbf{Incorporar una fuente de criminalidad real.} Si en el futuro se publicara algún indicador de criminalidad geolocalizado para Madrid —aunque fuera agregado a un nivel más fino que el distrito, por ejemplo por barrio o sección censal—, sustituir el índice de vulnerabilidad territorial por dicho indicador reforzaría directamente la validez del componente de seguridad ciudadana del sistema.
+
+    \item \textbf{Añadir una dimensión temporal al índice de peligrosidad.} Calcular indicadores de iluminación y accidentalidad diferenciados por franja horaria (día/noche, o incluso por hora), y permitir al usuario del visor indicar la hora prevista del trayecto, acercaría el sistema a la propuesta original del proyecto y a enfoques como el de Levy et al.\ \cite{levy2020}.
+
+    \item \textbf{Ampliar la validación.} Repetir la evaluación del Capítulo~\ref{cap:pruebas} sobre una muestra de pares origen-destino generada de forma aleatoria y estadísticamente representativa de la red, y complementarla con un estudio de usuarios —por ejemplo, mediante encuestas de percepción de seguridad sobre rutas reales recorridas— permitiría contrastar el índice de peligrosidad calculado con una medida de seguridad percibida independiente.
+
+    \item \textbf{Incorporar factores adicionales al coste de seguridad.} Trabajos como el de Byon et al.\ \cite{byon2010}, que integran en la elección de ruta variables como la pendiente del terreno o el valor escénico del recorrido, sugieren otras dimensiones —accesibilidad para personas con movilidad reducida, pendiente, disponibilidad de sombra o de aceras en buen estado— que podrían añadirse a la función de coste con la misma metodología de normalización y ponderación empleada en este proyecto (Sección~\ref{sec:funcion_coste}).
+
+    \item \textbf{Evolucionar el prototipo hacia un sistema desplegable.} El visor actual es un prototipo de un único fichero pensado para demostrar la viabilidad del enfoque (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}); llevarlo a producción exigiría, entre otras cosas, cachear o precalcular rutas frecuentes, servir la aplicación tras un servidor WSGI en lugar del servidor de desarrollo de Flask, y automatizar la actualización periódica de los datos de origen (iluminación, accidentalidad) a medida que el Ayuntamiento de Madrid publique nuevas versiones.
+
+    \item \textbf{Generalizar el sistema a otras ciudades.} Al apoyarse en fuentes de datos abiertos con estructura similar en muchos ayuntamientos españoles y en una red viaria obtenida de OpenStreetMap (Sección~\ref{subsec:osm_datos}), el pipeline ETL y la arquitectura del sistema (Capítulo~\ref{cap:propuesta}) podrían adaptarse a otras ciudades con un esfuerzo de reconfiguración acotado, principalmente en la fase de extracción de cada fuente de datos local.
+\end{enumerate}
+
+% -----------------------------------------------------------------------
+% 7.5 CONCLUSIÓN FINAL
+% -----------------------------------------------------------------------
+\section{Conclusión final}
+\label{sec:conclusion_final}
+
+Este Trabajo Fin de Grado ha demostrado la viabilidad de construir, a partir de datos abiertos georreferenciados y de un motor de enrutamiento sobre grafos ponderados, un sistema que ofrece a los peatones una alternativa medible a la ruta más corta convencional: una ruta que sacrifica, de media, un incremento moderado de distancia a cambio de una reducción sustancial de la exposición a los factores de riesgo urbano modelados. El sistema resultante —desde el proceso ETL hasta el prototipo de visor web— queda documentado e implementado en su totalidad en el repositorio del proyecto, y las limitaciones señaladas en este capítulo definen un camino de continuidad claro, y no un obstáculo, para su evolución futura.
