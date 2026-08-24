@@ -1,6 +1,6 @@
 # Sistema de Cálculo de Rutas Seguras en Entornos Urbanos Mediante Análisis Espacial
 
-TFG de Ingeniería Informática — Universidad, Madrid.
+TFG del Grado en Ingeniería Informática — Universidad de Granada (ETSIIT). Ciudad de estudio: Madrid.
 
 Sistema que calcula rutas peatonales seguras en Madrid combinando la red viaria de OpenStreetMap con datos de iluminación pública, accidentes/atropellos y vulnerabilidad territorial para generar un índice de seguridad por tramo, y ofrece un visor web con buscador de direcciones para comparar la ruta más rápida con la más segura entre dos puntos.
 
@@ -17,6 +17,8 @@ Sistema que calcula rutas peatonales seguras en Madrid combinando la red viaria 
 | Índice de seguridad por tramo | ✅ Hecho |
 | Algoritmo de rutas (pgRouting) | ✅ Hecho |
 | Visor web (Leaflet + Flask) | ✅ Hecho |
+| Evaluación comparativa ruta rápida vs. segura | ✅ Hecho |
+| Memoria del TFG (`docs/`) | ✅ Hecho |
 
 ---
 
@@ -38,8 +40,8 @@ Sistema que calcula rutas peatonales seguras en Madrid combinando la red viaria 
 tfg_rutas_seguras/
 ├── data/
 │   ├── raw/          # Datos originales descargados: osm, farolas, accidentes, iguala, distritos (no versionados)
-│   └── processed/    # Datos transformados, p. ej. rutas de ejemplo (no versionados)
-├── docs/             # Documentación y memoria del TFG
+│   └── processed/    # Datos transformados, p. ej. rutas de ejemplo y evaluación (no versionados)
+├── docs/             # Memoria del TFG (LaTeX): capitulos/, apendices/, bibliografia/, portada/, prefacios/
 ├── notebooks/        # Análisis exploratorio en Jupyter
 ├── scripts/          # Scripts ETL y de procesamiento, numerados por orden de ejecución
 │   ├── 01_download_osm.py
@@ -50,7 +52,8 @@ tfg_rutas_seguras/
 │   ├── 06_load_distritos.py
 │   ├── 07_calcular_indice_seguridad.py
 │   ├── 08_calcular_ruta.py
-│   └── rutas.py      # Lógica de cálculo de rutas, reutilizada por 08 y por web/app.py
+│   ├── 09_evaluacion.py  # Evaluación comparativa ruta rápida vs. segura
+│   └── rutas.py      # Lógica de cálculo de rutas, reutilizada por 08, 09 y por web/app.py
 ├── sql/              # Esquemas SQL, uno por fuente de datos
 ├── web/              # Visor web con Leaflet
 │   ├── app.py
@@ -135,6 +138,14 @@ python scripts/08_calcular_ruta.py
 
 Calcula la ruta más rápida y la más segura entre dos puntos de ejemplo y las guarda en `data/processed/rutas_ejemplo.geojson`.
 
+### 9. Evaluación comparativa ruta rápida vs. segura
+
+```bash
+python scripts/09_evaluacion.py
+```
+
+Calcula ambas rutas sobre ocho pares origen-destino representativos de Madrid y guarda los resultados en `data/processed/evaluacion_rutas.csv` (usado en el Capítulo 6 de la memoria).
+
 ### Visor web
 
 ```bash
@@ -149,3 +160,19 @@ El visor tiene dos modos, seleccionables en la parte superior del panel:
 - **Detallado** — dibuja ambas rutas (rápida y segura) y una tabla comparativa tramo a tramo: distancia, duración, peligrosidad media, iluminación, accidentes cercanos, atropellos registrados y vulnerabilidad del distrito, con indicadores en verde/rojo de en qué mejora o empeora la ruta segura frente a la rápida.
 
 Otros detalles: botón para intercambiar origen y destino, y `GET /api/geocode` / `GET /api/geocode/inverso` como proxy propio a Nominatim (autocompletado y clic en el mapa).
+
+---
+
+## Memoria del TFG
+
+La memoria completa está en `docs/` (LaTeX, clase `book`). Para compilarla:
+
+```bash
+cd docs
+pdflatex proyecto.tex
+bibtex proyecto
+pdflatex proyecto.tex
+pdflatex proyecto.tex
+```
+
+Genera `docs/proyecto.pdf`.
