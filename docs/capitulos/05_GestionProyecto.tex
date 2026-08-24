@@ -1,0 +1,108 @@
+\chapter{Gestión del proyecto}
+\label{cap:gestion}
+
+Este capítulo recoge los aspectos de gestión del Trabajo Fin de Grado: la metodología de trabajo seguida para organizar el desarrollo en el tiempo disponible, la planificación temporal real del proyecto y una estimación del presupuesto asociado.
+
+% -----------------------------------------------------------------------
+% 5.1 METODOLOGÍA DE GESTIÓN
+% -----------------------------------------------------------------------
+\section{Metodología de gestión}
+\label{sec:metodologia_gestion}
+
+El proyecto ha sido desarrollado en su totalidad por una única persona, compaginando el trabajo con unas prácticas curriculares en empresa entre marzo y junio, y con una incorporación laboral posterior. Esta circunstancia ha condicionado directamente la forma de gestionar el proyecto: en lugar de sesiones largas de trabajo, la dedicación real ha consistido en sesiones cortas —en torno a dos horas—, dispersas de lunes a viernes, a lo largo de aproximadamente seis meses.
+
+Dado este contexto, no se ha empleado ninguna herramienta de gestión de proyectos externa (tipo Jira o Trello): la planificación se ha resuelto de forma informal, apoyándose en la misma lógica incremental por fuente de datos descrita en la Sección~\ref{sec:metodologia_desarrollo}. Cada fase de la planificación (Sección~\ref{sec:planificacion_temporal}) se corresponde con un incremento funcional autocontenido —una fuente de datos cargada, el índice de seguridad calculado, el motor de enrutamiento funcionando, el visor web operativo—, lo que ha permitido retomar el trabajo en sesiones cortas sin necesidad de recuperar contexto extenso de una sesión a otra.
+
+Como ya se señaló en la Sección~\ref{sec:metodologia_desarrollo}, el criterio seguido para los commits de Git ha sido uno por hito funcional. En la práctica, durante las semanas de mayor carga de las prácticas en empresa, varios hitos completados en sesiones locales se consolidaron y se subieron al repositorio juntos en cuanto hubo tiempo para revisarlos con calma; esto explica que el historial de commits del proyecto muestre una concentración de hitos en fechas puntuales (en particular, a mediados de agosto) que no refleja fielmente el reparto real del esfuerzo, más disperso en el tiempo de lo que el propio historial de Git sugiere.
+
+% -----------------------------------------------------------------------
+% 5.2 PLANIFICACIÓN TEMPORAL
+% -----------------------------------------------------------------------
+\section{Planificación temporal}
+\label{sec:planificacion_temporal}
+
+El TFG tiene asignados 12 créditos ECTS, equivalentes de forma nominal a unas 300 horas de dedicación. La estimación de horas efectivamente invertidas, calculada a partir del ritmo real de trabajo (dos horas aproximadas, de lunes a viernes, entre principios de marzo y el 1 de septiembre), se sitúa en torno a las \textbf{270 horas}, una cifra coherente con la carga nominal de la asignatura una vez descontadas las semanas de menor dedicación por solapamiento con las prácticas en empresa.
+
+El desarrollo se ha organizado en las siguientes ocho fases:
+
+\begin{enumerate}
+    \item \textbf{F1 — Estudio del estado del arte y definición de objetivos} (2 marzo -- 17 abril): revisión bibliográfica sobre enrutamiento seguro (Capítulo~\ref{cap:introduccion}), y definición del objetivo general, los objetivos específicos y la hipótesis de partida.
+    \item \textbf{F2 — Diseño de la propuesta y selección tecnológica} (20 abril -- 1 mayo): definición de la arquitectura del sistema y elección del stack (PostgreSQL/PostGIS/pgRouting, Python, Leaflet), descrita en el Capítulo~\ref{cap:propuesta}.
+    \item \textbf{F3 — Configuración del entorno y carga de la red viaria} (4 -- 29 mayo): puesta en marcha de la base de datos \texttt{safe\_maps} y desarrollo de \texttt{01\_download\_osm.py} y \texttt{02\_load\_osm\_to\_db.py}.
+    \item \textbf{F4 — ETL de las fuentes de seguridad} (1 junio -- 10 julio): desarrollo de los scripts \texttt{03} a \texttt{06} (farolas, accidentes, vulnerabilidad territorial y distritos), la fase de mayor duración del proyecto por incluir cuatro fuentes de datos heterogéneas.
+    \item \textbf{F5 — Índice de seguridad y motor de enrutamiento} (13 -- 31 julio): diseño de la función de coste (Sección~\ref{sec:funcion_coste}) y desarrollo de \texttt{07\_calcular\_indice\_seguridad.py}, \texttt{rutas.py} y \texttt{08\_calcular\_ruta.py}.
+    \item \textbf{F6 — Prototipo del visor web} (3 -- 21 agosto): desarrollo del backend Flask y el frontend Leaflet (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}), incluyendo el rediseño posterior con buscador Nominatim y los modos simple/detallado.
+    \item \textbf{F7 — Redacción de la memoria: capítulos 1 a 4} (20 -- 24 agosto): redacción de la introducción, el estado del arte, la propuesta y la metodología, en paralelo con el cierre de F6.
+    \item \textbf{F8 — Pruebas, gestión, conclusiones y revisión final} (25 agosto -- 1 septiembre): redacción de los capítulos de pruebas y validación, gestión del proyecto y conclusiones, elaboración de apéndices y revisión final antes de la solicitud de evaluación.
+\end{enumerate}
+
+La Figura~\ref{fig:gantt} representa esta planificación mediante un diagrama de Gantt.
+
+\begin{figure}[h]
+\centering
+\begin{ganttchart}[
+    hgrid,
+    vgrid,
+    x unit=0.34cm,
+    y unit title=0.6cm,
+    y unit chart=0.6cm,
+    title height=1,
+    bar height=0.55,
+    bar/.append style={fill=gray!60},
+    bar label font=\small,
+    title label font=\small\bfseries,
+    milestone/.append style={fill=black}
+]{1}{27}
+\gantttitle{Mar}{4}
+\gantttitle{Abr}{5}
+\gantttitle{May}{4}
+\gantttitle{Jun}{5}
+\gantttitle{Jul}{4}
+\gantttitle{Ago}{4}
+\gantttitle{Sep}{1} \\
+\ganttbar{F1 -- Estado del arte y objetivos}{1}{7} \\
+\ganttbar{F2 -- Diseño y selección tecnológica}{8}{9} \\
+\ganttbar{F3 -- Entorno y carga red viaria}{10}{13} \\
+\ganttbar{F4 -- ETL fuentes de seguridad}{14}{19} \\
+\ganttbar{F5 -- Índice y enrutamiento}{20}{22} \\
+\ganttbar{F6 -- Prototipo del visor web}{23}{25} \\
+\ganttbar{F7 -- Memoria (cap. 1--4)}{25}{26} \\
+\ganttbar{F8 -- Pruebas, gestión y cierre}{26}{27} \\
+\ganttmilestone{Solicitud de evaluación}{27}
+\end{ganttchart}
+\caption{Planificación temporal del proyecto por semanas (marzo -- septiembre de 2026).}
+\label{fig:gantt}
+\end{figure}
+
+% -----------------------------------------------------------------------
+% 5.3 ESTIMACIÓN DE RECURSOS Y PRESUPUESTO
+% -----------------------------------------------------------------------
+\section{Estimación de recursos y presupuesto}
+\label{sec:presupuesto}
+
+Al tratarse de un Trabajo Fin de Grado, el proyecto no ha generado ningún desembolso económico real. No obstante, y como es habitual en esta memoria, se incluye a continuación una estimación orientativa de su coste si se hubiera desarrollado en un contexto profesional.
+
+\textbf{Recursos humanos.} Se estima el coste del trabajo desarrollado tomando como referencia una tarifa de mercado para un perfil de desarrollador/analista de datos junior, aplicada a las 270 horas de dedicación estimadas en la Sección~\ref{sec:planificacion_temporal}.
+
+\textbf{Recursos materiales.} Se contabiliza la amortización del equipo portátil personal empleado para el desarrollo, calculada de forma lineal sobre una vida útil de 4 años y prorrateada a los 6 meses de duración del proyecto.
+
+\textbf{Software.} Todas las herramientas empleadas —PostgreSQL, PostGIS, pgRouting, Python y sus bibliotecas, Flask y Leaflet (Tabla~\ref{tab:stack})— son de código abierto y sin coste de licencia. Las fuentes de datos utilizadas (OpenStreetMap, Datos Abiertos del Ayuntamiento de Madrid, Geoportal de Madrid, Nominatim) son igualmente de acceso público y gratuito.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\hline
+\textbf{Partida} & \textbf{Cantidad} & \textbf{Coste unitario} & \textbf{Coste total} \\
+\hline
+Recursos humanos & 270 h & 20\,\euro/h & 5\,400\,\euro \\
+Recursos materiales (amortización portátil) & 6 meses & 25\,\euro/mes & 150\,\euro \\
+Software y licencias & --- & 0\,\euro & 0\,\euro \\
+\hline
+\textbf{Total estimado} & & & \textbf{5\,550\,\euro} \\
+\hline
+\end{tabular}
+\caption{Estimación del presupuesto del proyecto.}
+\label{tab:presupuesto}
+\end{table}
+
+No se han incluido en esta estimación los costes de electricidad o conexión a internet, por resultar difícilmente atribuibles al proyecto de forma individual, ni las horas de dirección académica del tutor, al no constituir un coste asumido por la autora.
