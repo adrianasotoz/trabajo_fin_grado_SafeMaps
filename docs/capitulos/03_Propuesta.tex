@@ -20,13 +20,45 @@ El sistema se articula en torno a cuatro componentes principales, cuya interacci
     \item \textbf{Visor cartográfico web}: interfaz de usuario desarrollada con Leaflet y un backend en Flask que permite introducir origen y destino —escribiendo una dirección, mediante geolocalización o haciendo clic en el mapa—, lanzar la consulta de enrutamiento y visualizar la ruta segura junto a la ruta más corta sobre un mapa de Madrid.
 \end{enumerate}
 
-% Figura de arquitectura — añadir cuando tengas el diagrama
-% \begin{figure}[h]
-%   \centering
-%   \includegraphics[width=0.85\textwidth]{figuras/arquitectura_sistema.png}
-%   \caption{Arquitectura general del sistema SafeWalk-Madrid.}
-%   \label{fig:arquitectura}
-% \end{figure}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    comp/.style={rectangle, rounded corners, draw=black, thick, fill=gray!10,
+        minimum width=7.6cm, minimum height=1.15cm, align=center},
+    ctx/.style={rectangle, rounded corners, draw=black, dashed, fill=white,
+        minimum width=7.6cm, minimum height=0.9cm, align=center},
+    arr/.style={-{Latex[length=2.2mm]}, thick},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt}
+]
+
+\node[ctx] (fuentes) {Fuentes de datos abiertas\\
+    \scriptsize OpenStreetMap · Geoportal de Madrid · Datos Abiertos Madrid};
+
+\node[comp, below=1.3cm of fuentes] (etl) {Pipeline ETL\\
+    \scriptsize \texttt{scripts/01\_}--\texttt{07\_} (Python, osmnx, GeoPandas)};
+
+\node[comp, below=1.3cm of etl] (bd) {Base de datos espacial\\
+    \scriptsize PostgreSQL 16 + PostGIS --- \texttt{safe\_maps}};
+
+\node[comp, below=1.3cm of bd] (routing) {Motor de enrutamiento\\
+    \scriptsize pgRouting --- \texttt{pgr\_dijkstra}};
+
+\node[comp, below=1.3cm of routing] (visor) {Visor cartográfico web\\
+    \scriptsize Flask (backend) + Leaflet (frontend)};
+
+\node[ctx, below=1.3cm of visor] (usuario) {Usuario};
+
+\draw[arr] (fuentes) -- (etl) node[lbl, midway] {extracción};
+\draw[arr] (etl) -- (bd) node[lbl, midway] {carga\\ \scriptsize SQLAlchemy};
+\draw[arr] (bd) -- (routing) node[lbl, midway] {consulta ponderada\\ \scriptsize \texttt{cost} / \texttt{cost\_seguro}};
+\draw[arr] (routing) -- (visor) node[lbl, midway] {\texttt{calcular\_ruta()}};
+\draw[arr] (visor) -- (usuario) node[lbl, midway] {HTTP / JSON};
+
+\end{tikzpicture}
+\caption{Arquitectura general del sistema SafeWalk-Madrid. Los recuadros sólidos son los cuatro componentes principales descritos en esta sección; los recuadros discontinuos representan el contexto externo (fuentes de datos y usuario final). El motor de enrutamiento se ejecuta como extensión dentro de la misma instancia de PostgreSQL que la base de datos espacial.}
+\label{fig:arquitectura}
+\end{figure}
 
 A diferencia del planteamiento inicial del proyecto, la versión implementada de SafeWalk-Madrid \textbf{no distingue franjas horarias}: el coste de seguridad de cada arista es único e independiente de la hora del día. Esta simplificación se adoptó por dos motivos. Primero, los datos de accidentalidad disponibles no permiten una segmentación diurna/nocturna suficientemente robusta como para calcular dos indicadores fiables sin perder densidad muestral en buena parte de la red. Segundo, al no disponerse de un indicador de criminalidad real (véase la Sección~\ref{subsec:vulnerabilidad_datos}), el argumento principal para justificar la ponderación temporal —la variación día/noche del riesgo de criminalidad documentada por Levy et al. \cite{levy2020}— pierde parte de su fundamento en este sistema. La incorporación de una dimensión temporal se plantea como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
 
