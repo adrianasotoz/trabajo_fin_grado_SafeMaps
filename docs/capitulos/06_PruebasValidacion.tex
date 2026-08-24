@@ -1,0 +1,85 @@
+\chapter{Pruebas y validación}
+\label{cap:pruebas}
+
+Este capítulo aborda el objetivo específico OE6 (Sección~\ref{subsec:objetivos_especificos}): evaluar cuantitativamente en qué medida la ruta segura difiere de la ruta más corta, tanto en coste de desplazamiento (distancia, tiempo) como en exposición al riesgo (índice de peligrosidad y sus componentes), y contrastar el resultado con la hipótesis de partida (Sección~\ref{subsec:hipotesis}).
+
+% -----------------------------------------------------------------------
+% 6.1 METODOLOGÍA DE EVALUACIÓN
+% -----------------------------------------------------------------------
+\section{Metodología de evaluación}
+\label{sec:metodologia_evaluacion}
+
+La evaluación se ha realizado calculando, para un conjunto de pares origen-destino, la ruta \textit{rápida} (criterio \texttt{cost}, Sección~\ref{sec:enrutamiento}) y la ruta \textit{segura} (criterio \texttt{cost\_seguro}) mediante la misma función \texttt{calcular\_ruta()} que expone el visor web, y comparando sus estadísticas agregadas: distancia, duración estimada, índice de peligrosidad medio, densidad media de iluminación y de accidentalidad, número total de atropellos y vulnerabilidad territorial media, todos ellos ponderados por la longitud de cada tramo recorrido (Sección~\ref{sec:enrutamiento}).
+
+Se han seleccionado \textbf{ocho pares origen-destino} (Tabla~\ref{tab:resultados_rutas}) con dos criterios de variación deliberada: la \textbf{distancia}, desde trayectos cortos de menos de 2\,km (por ejemplo, Puerta del Sol -- Atocha) hasta trayectos largos de más de 5\,km (Plaza Elíptica -- Puente de Vallecas); y el \textbf{perfil de vulnerabilidad territorial} de los distritos atravesados, desde pares que discurren íntegramente por distritos de baja vulnerabilidad según el Índice Iguala (Moncloa, Chamartín) hasta pares que atraviesan distritos de vulnerabilidad alta (Usera, Villaverde, Puente de Vallecas; véanse los valores de \texttt{ivt\_agregado} en la Sección~\ref{sec:esquema_bd}). No se ha pretendido un muestreo aleatorio y representativo de todo el callejero de Madrid —lo que exigiría un número de pares muy superior—, sino cubrir de forma deliberada esta variabilidad para poder observar cómo cambia el comportamiento del sistema según el contexto.
+
+El proceso está automatizado en \texttt{scripts/09\_evaluacion.py}, que sigue la misma convención de rutas y estructura que el resto de scripts del proyecto (Sección~\ref{sec:metodologia_desarrollo}): calcula ambas rutas para cada par, imprime un resumen por consola y vuelca el resultado completo en \texttt{data/processed/evaluacion\_rutas.csv} para su análisis. Todos los resultados presentados en este capítulo son directamente reproducibles ejecutando dicho script sobre la base de datos \texttt{safe\_maps}.
+
+% -----------------------------------------------------------------------
+% 6.2 RESULTADOS COMPARATIVOS
+% -----------------------------------------------------------------------
+\section{Resultados comparativos}
+\label{sec:resultados_comparativos}
+
+La Tabla~\ref{tab:resultados_rutas} resume, para cada par origen-destino, la distancia y el índice de peligrosidad medio de ambas rutas, junto con la variación relativa ($\Delta$) de la ruta segura respecto a la rápida, y el número total de atropellos acumulados a lo largo de cada ruta.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\hline
+\textbf{Par origen-destino} & \multicolumn{3}{c}{\textbf{Distancia (m)}} & \multicolumn{3}{c}{\textbf{Peligrosidad media}} & \textbf{Atropellos} \\
+ & Ráp. & Seg. & $\Delta$\,\% & Ráp. & Seg. & $\Delta$\,\% & Ráp.$\to$Seg. \\
+\hline
+Sol -- Atocha                    & 1\,922 & 2\,084 & +8.5  & 0.4305 & 0.3100 & -28.0 & 39 $\to$ 12 \\
+Callao -- Pta.\ Alcalá           & 1\,549 & 1\,930 & +24.6 & 0.5862 & 0.3510 & -40.1 & 54 $\to$ 11 \\
+N.\ Ministerios -- 4 Caminos     & 1\,557 & 1\,666 & +7.0  & 0.4726 & 0.3987 & -15.6 & 30 $\to$ 28 \\
+Pza.\ Elíptica -- Pte.\ Vallecas & 5\,624 & 5\,858 & +4.2  & 0.3849 & 0.3221 & -16.3 & 63 $\to$ 30 \\
+Moncloa -- C.\ Universitaria     & 1\,672 & 1\,673 & +0.0  & 0.2253 & 0.2250 & -0.1  & 14 $\to$ 14 \\
+Villaverde Alto -- Usera         & 5\,101 & 5\,155 & +1.1  & 0.3529 & 0.3276 & -7.2  & 15 $\to$ 9 \\
+Chamartín -- Hortaleza           & 4\,780 & 4\,818 & +0.8  & 0.2422 & 0.2342 & -3.3  & 8 $\to$ 3 \\
+Vicálvaro -- V.\ Vallecas        & 4\,416 & 4\,421 & +0.1  & 0.2720 & 0.2712 & -0.3  & 6 $\to$ 6 \\
+\hline
+\textbf{Media de los 8 pares}    &        &        & \textbf{+5.8} &        &        & \textbf{-13.9} & \textbf{229 $\to$ 113} \\
+\hline
+\end{tabular}
+\caption{Comparativa entre la ruta rápida y la ruta segura para los ocho pares origen-destino evaluados. La fila final agrega las variaciones porcentuales medias y la suma total de atropellos.}
+\label{tab:resultados_rutas}
+\end{table}
+
+Dos lecturas agregadas de la Tabla~\ref{tab:resultados_rutas} resultan especialmente relevantes. Considerando la \textbf{distancia total} recorrida en los ocho trayectos (suma de las ocho rutas, no la media de los porcentajes individuales), la ruta segura supone un incremento del \textbf{3.7\,\%} sobre la ruta rápida (de 26\,621\,m a 27\,604\,m) —una cifra menor que la media simple de los ocho porcentajes (+5.8\,\%) porque los pares más largos, que pesan más en el total, son también los que menos se desvían en términos relativos. Considerando el número \textbf{total} de atropellos acumulados en los ocho trayectos, la ruta segura los reduce de 229 a 113, un \textbf{50.7\,\%} menos.
+
+Se observan además dos patrones claros en función del contexto:
+
+\begin{itemize}
+    \item En los pares que discurren por \textbf{zonas céntricas de tráfico denso} (Sol -- Atocha, Callao -- Puerta de Alcalá), la ruta segura evita tramos con una accidentalidad muy superior a la media —el indicador \texttt{accidentes\_100m} pasa, en el caso Callao -- Puerta de Alcalá, de 41.9 a 7.6— a cambio de un desvío perceptible (hasta +24.6\,\% de distancia en ese mismo par). Es precisamente en estos casos donde la reducción de peligrosidad es mayor (-28.0\,\% y -40.1\,\% respectivamente).
+    \item En los pares \textbf{Moncloa -- Ciudad Universitaria} y \textbf{Vicálvaro -- Villa de Vallecas}, ambas rutas son prácticamente idénticas ($\Delta$ distancia inferior al 0.1\,\%). En estas zonas, de menor densidad de red peatonal alternativa o de riesgo ya relativamente homogéneo entre las vías disponibles, el algoritmo no encuentra ningún desvío que reduzca el coste de seguridad sin penalizar en exceso la distancia, por lo que la ruta óptima según ambos criterios coincide.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+% 6.3 DISCUSIÓN
+% -----------------------------------------------------------------------
+\section{Discusión}
+\label{sec:discusion_resultados}
+
+La hipótesis de partida (Sección~\ref{subsec:hipotesis}) planteaba que es posible reducir la exposición a factores de riesgo urbano \textit{con un incremento de distancia o tiempo de recorrido asumible}. Los resultados obtenidos son consistentes con esta hipótesis: un incremento agregado del 3.7\,\% en distancia (equivalente en tiempo, al usarse una velocidad peatonal constante, Sección~\ref{sec:enrutamiento}) se corresponde con una reducción del 50.7\,\% en el número total de atropellos acumulados y de un 13.9\,\% de media en el índice de peligrosidad. Esta relación es incluso más favorable que la reportada por Sohrabi et al. \cite{sohrabi2022} para vehículos —un incremento del 8\,\% en tiempo de viaje asociado a una reducción del 23\,\% en probabilidad de accidente—, si bien ambas cifras no son directamente comparables: la de Sohrabi et al.\ mide una reducción real de probabilidad de accidente sobre datos de siniestralidad vehicular, mientras que la obtenida aquí es una reducción de un índice compuesto y ponderado (Sección~\ref{sec:funcion_coste}), calculado sobre ocho trayectos concretos y no sobre una muestra estadísticamente representativa de toda la red.
+
+Que el desvío se mantenga moderado incluso en los pares con mayor reducción de peligrosidad (máximo +24.6\,\% de distancia) es una consecuencia directa del diseño de la función de coste: la constante $\alpha = 4$ (Ecuación~\ref{eq:coste_seguro}) limita el coste de cualquier tramo a, como máximo, cinco veces su longitud real, por lo que \texttt{pgr\_dijkstra} nunca encuentra rentable un rodeo arbitrariamente largo para evitar un único tramo peligroso; el propio valor de $\alpha$ se ajustó de forma empírica observando este comportamiento sobre varios pares origen-destino (Sección~\ref{subsec:coste_enrutamiento}), y los resultados de este capítulo confirman a posteriori, sobre un conjunto más amplio de pares, que esa elección produce desvíos perceptibles pero razonables en la práctica.
+
+El comportamiento observado en Moncloa -- Ciudad Universitaria y Vicálvaro -- Villa de Vallecas, donde ambas rutas coinciden, tiene también una lectura relevante: el sistema no fuerza un desvío artificial cuando no existe una alternativa realmente más segura dentro del margen que permite $\alpha$, lo que evita el efecto contrario e indeseable de alargar sistemáticamente todas las rutas de forma poco útil.
+
+% -----------------------------------------------------------------------
+% 6.4 LIMITACIONES DE LA VALIDACIÓN
+% -----------------------------------------------------------------------
+\section{Limitaciones de la validación}
+\label{sec:limitaciones_validacion}
+
+La validación presentada en este capítulo tiene tres limitaciones que conviene explicitar:
+
+\begin{enumerate}
+    \item \textbf{Validación interna, no externa.} Los resultados comparan la ruta segura con la ruta rápida usando los propios indicadores que alimentan la función de coste (Sección~\ref{sec:funcion_coste}); no existe un contraste contra un desenlace real independiente —por ejemplo, tasas de victimización reportadas por personas que recorrieron ambas rutas— que confirme que la ruta segura lo es también en la práctica. Esta limitación es coherente con la ya señalada en la Sección~\ref{subsec:vulnerabilidad_datos} sobre el uso de un índice de vulnerabilidad territorial como \textit{proxy} de criminalidad, al no existir datos de criminalidad real con desagregación geográfica (Sección~\ref{sec:motivacion}).
+    \item \textbf{Tamaño y selección de la muestra.} Los ocho pares se han elegido deliberadamente para cubrir distintos escenarios (Sección~\ref{sec:metodologia_evaluacion}), no mediante un muestreo aleatorio sobre el conjunto de posibles pares origen-destino de Madrid; los porcentajes agregados de la Sección~\ref{sec:resultados_comparativos} deben interpretarse como una tendencia observada sobre estos casos concretos, no como una estimación estadísticamente representativa de toda la red.
+    \item \textbf{Ausencia de validación con usuarios.} No se ha realizado ninguna prueba de usabilidad ni de percepción de seguridad con personas reales sobre el prototipo de visor web (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}); la evaluación de este capítulo es exclusivamente cuantitativa, sobre los indicadores calculados por el propio sistema.
+\end{enumerate}
+
+Estas limitaciones no invalidan el resultado principal del capítulo —que el sistema reduce de forma medible la exposición a los indicadores de riesgo modelados a cambio de un incremento moderado de distancia—, pero delimitan con precisión el alcance de esa afirmación, y se retoman como líneas de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
