@@ -1,0 +1,85 @@
+\chapter{Consultas SQL/PostGIS de especial complejidad}
+\label{ap:sql}
+
+Este apéndice recoge las tres consultas SQL/PostGIS más complejas del proyecto, más allá de las ya mostradas en la Sección~\ref{sec:enrutamiento} (nodo más cercano y consulta de \texttt{pgr\_dijkstra}). Los parámetros precedidos de dos puntos (\texttt{:nombre}) son los que \texttt{SQLAlchemy} sustituye en tiempo de ejecución, siguiendo la misma convención de los listados del Capítulo~\ref{cap:propuesta}.
+
+% -----------------------------------------------------------------------
+% B.1 ÍNDICE DE PELIGROSIDAD Y COSTE SEGURO
+% -----------------------------------------------------------------------
+\section{Índice de peligrosidad y coste seguro}
+\label{ap:sec:indice_peligrosidad}
+
+El Listado~\ref{lst:indice-peligrosidad} calcula, para todos los tramos a la vez, la Ecuación~\ref{eq:coste} (índice de peligrosidad) y la Ecuación~\ref{eq:coste_seguro} (coste seguro), descritas en la Sección~\ref{sec:funcion_coste}. Los topes al percentil 99 (\texttt{:cap\_acc}, \texttt{:cap\_atropello}, \texttt{:cap\_luz}) y los extremos de vulnerabilidad (\texttt{:ivt\_min}, \texttt{:ivt\_max}) se calculan en una consulta previa y se pasan como parámetros.
+
+\begin{lstlisting}[style=SQL, caption={Cálculo del índice de peligrosidad y del coste seguro (\texttt{scripts/07\_calcular\_indice\_seguridad.py}).}, label={lst:indice-peligrosidad}]
+UPDATE edges e
+SET indice_peligrosidad =
+      :w_acc  * LEAST(e.accidentes_100m, :cap_acc) / :cap_acc
+    + :w_atr  * LEAST(e.num_atropellos, :cap_atropello) / :cap_atropello
+    + :w_luz  * (1 - LEAST(e.farolas_100m, :cap_luz) / :cap_luz)
+    + :w_vuln * (v.ivt_agregado - :ivt_min) / (:ivt_max - :ivt_min)
+FROM vulnerabilidad_distritos v
+WHERE v.cod_distrito = e.cod_distrito;
+
+UPDATE edges
+SET cost_seguro = length * (1 + :alpha * indice_peligrosidad),
+    reverse_cost_seguro = length * (1 + :alpha * indice_peligrosidad);
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+% B.2 DENSIDAD DE FAROLAS POR TRAMO MEDIANTE BUFFER DE PROXIMIDAD
+% -----------------------------------------------------------------------
+\section{Densidad de farolas por tramo mediante buffer de proximidad}
+\label{ap:sec:buffer_farolas}
+
+El Listado~\ref{lst:buffer-farolas} cuenta, para cada tramo, el número de farolas en un radio de 20\,m (\texttt{BUFFER\_M}, Sección~\ref{subsec:iluminacion_datos}) mediante \texttt{ST\_DWithin}, y deriva de ahí la densidad \texttt{farolas\_100m}. El radio se expresa en grados (\texttt{:buffer\_deg}) y no mediante el tipo \texttt{geography}, que sí trabajaría en metros de forma exacta pero no puede aprovechar el índice \texttt{GIST} ya creado sobre la columna \texttt{geometry}: con un radio tan pequeño, la distorsión de trabajar directamente en grados es despreciable frente a la ganancia de poder usar dicho índice sobre una tabla de más de 524\,000 tramos.
+
+\begin{lstlisting}[style=SQL, caption={Densidad de farolas por tramo (\texttt{scripts/03\_load\_farolas.py}).}, label={lst:buffer-farolas}]
+UPDATE edges e
+SET num_farolas = sub.n,
+    farolas_100m = sub.n / (e.length / 100.0)
+FROM (
+    SELECT e2.id, count(f.id) AS n
+    FROM edges e2
+    JOIN farolas f
+      ON ST_DWithin(f.geom, e2.geom, :buffer_deg)
+    GROUP BY e2.id
+) sub
+WHERE e.id = sub.id AND e.length > 0;
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+% B.3 JOIN ESPACIAL TRAMO-DISTRITO CON RESOLUCIÓN DE CASOS LÍMITE
+% -----------------------------------------------------------------------
+\section{Join espacial tramo-distrito con resolución de casos límite}
+\label{ap:sec:join_distrito}
+
+El Listado~\ref{lst:join-distrito} asigna a cada tramo el distrito que contiene su centroide (Sección~\ref{sec:modelado_red}), y resuelve los tramos que quedan sin asignar —el centroide cae fuera de todos los polígonos, típicamente por pequeñas discrepancias entre la red de OSM y los límites administrativos oficiales— asignándolos al distrito más cercano mediante el operador de vecino más cercano (\texttt{<->}) en una subconsulta \texttt{LATERAL}.
+
+\begin{lstlisting}[style=SQL, caption={Join espacial tramo-distrito (\texttt{scripts/06\_load\_distritos.py}).}, label={lst:join-distrito}]
+-- Distrito que contiene el centroide del tramo.
+UPDATE edges e
+SET cod_distrito = sub.cod_distrito
+FROM (
+    SELECT e2.id, d.cod_distrito
+    FROM edges e2
+    JOIN distritos d ON ST_Within(ST_Centroid(e2.geom), d.geom)
+) sub
+WHERE e.id = sub.id;
+
+-- Tramos sin distrito asignado: al distrito más cercano.
+UPDATE edges e
+SET cod_distrito = sub.cod_distrito
+FROM (
+    SELECT e2.id, d.cod_distrito
+    FROM edges e2
+    CROSS JOIN LATERAL (
+        SELECT cod_distrito
+        FROM distritos
+        ORDER BY geom <-> ST_Centroid(e2.geom)
+        LIMIT 1
+    ) d
+    WHERE e2.cod_distrito IS NULL
+) sub
+WHERE e.id = sub.id;
+\end{lstlisting}

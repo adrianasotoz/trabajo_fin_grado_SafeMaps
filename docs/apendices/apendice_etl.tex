@@ -1,0 +1,67 @@
+\chapter{Fragmentos de los scripts ETL}
+\label{ap:etl}
+
+Este apéndice recoge tres fragmentos de código Python representativos del proceso ETL descrito en la Sección~\ref{sec:etl} y en la Sección~\ref{sec:metodologia_desarrollo}, elegidos por ilustrar patrones que se repiten a lo largo de todos los scripts de \texttt{scripts/} o por resolver una decisión de diseño no trivial. El código completo de cada script está disponible en el repositorio del proyecto.
+
+% -----------------------------------------------------------------------
+% A.1 PATRÓN DE IDEMPOTENCIA
+% -----------------------------------------------------------------------
+\section{Patrón de idempotencia}
+\label{ap:sec:idempotencia}
+
+Todos los scripts ETL comprueban, antes de hacer nada, si los datos que cargan ya están presentes en la base de datos, y solo actúan si no lo están o si la variable \texttt{OVERWRITE} se ha puesto explícitamente a \texttt{True} (Sección~\ref{sec:metodologia_desarrollo}). El Listado~\ref{lst:idempotencia}, tomado de \texttt{scripts/03\_load\_farolas.py}, muestra este patrón.
+
+\begin{lstlisting}[style=Python, caption={Patrón de idempotencia (\texttt{scripts/03\_load\_farolas.py}).}, label={lst:idempotencia}]
+with engine.connect() as conn:
+    farolas_cargadas = conn.execute(
+        text("SELECT count(*) FROM farolas")
+    ).scalar() > 0
+
+if farolas_cargadas and not OVERWRITE:
+    print("Farolas ya cargadas en la BD, no se hace nada (OVERWRITE=False).")
+else:
+    if farolas_cargadas:
+        with engine.begin() as conn:
+            conn.execute(text("TRUNCATE TABLE farolas RESTART IDENTITY"))
+    # ... extracción, transformación y carga de los datos ...
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+% A.2 EXTRACCIÓN, TRANSFORMACIÓN Y CARGA CON GEOPANDAS
+% -----------------------------------------------------------------------
+\section{Extracción, transformación y carga con GeoPandas}
+\label{ap:sec:etl_geopandas}
+
+El Listado~\ref{lst:geopandas}, tomado de \texttt{scripts/06\_load\_distritos.py}, resume en pocas líneas las tres fases del proceso ETL descritas en la Sección~\ref{sec:etl}: lectura del fichero original en su formato nativo (\textit{extracción}), reproyección al sistema de referencia común EPSG:4326 y normalización de nombres de columna (\textit{transformación}), y volcado a PostGIS mediante \texttt{GeoPandas.to\_postgis()} (\textit{carga}).
+
+\begin{lstlisting}[style=Python, caption={Extracción, transformación y carga de un Shapefile (\texttt{scripts/06\_load\_distritos.py}).}, label={lst:geopandas}]
+shp_path = BASE / "data/raw/distritos/DISTRITOS.shp"
+distritos = gpd.read_file(shp_path).to_crs("EPSG:4326")
+distritos = distritos.rename(
+    columns={"COD_DIS": "cod_distrito", "NOMBRE": "nombre",
+             "Area": "area_m2", "geometry": "geom"}
+)[["cod_distrito", "nombre", "area_m2", "geom"]]
+distritos["cod_distrito"] = distritos["cod_distrito"].astype(int)
+distritos = distritos.set_geometry("geom")
+
+distritos.to_postgis("distritos", engine, if_exists="append", index=False)
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+% A.3 MEDIA PONDERADA POR LONGITUD DE LOS INDICADORES DE UNA RUTA
+% -----------------------------------------------------------------------
+\section{Media ponderada por longitud de los indicadores de una ruta}
+\label{ap:sec:media_ponderada}
+
+Las estadísticas agregadas de cada ruta (peligrosidad media, iluminación media, vulnerabilidad media...) presentadas en el visor web (Sección~\ref{sec:frontend_visor}) y en la evaluación comparativa del Capítulo~\ref{cap:pruebas} no son una media simple de los tramos recorridos, sino una \textbf{media ponderada por la longitud de cada tramo}, para que un tramo de 200\,m no pese lo mismo que uno de 5\,m en el resultado agregado. El Listado~\ref{lst:media-ponderada}, tomado de \texttt{scripts/rutas.py}, implementa este cálculo.
+
+\begin{lstlisting}[style=Python, caption={Cálculo de la media ponderada por longitud (\texttt{scripts/rutas.py}).}, label={lst:media-ponderada}]
+distancia_m = sum(fila.length for fila in filas)
+
+def media_ponderada(campo):
+    return sum(
+        fila.length * getattr(fila, campo) for fila in filas
+    ) / distancia_m
+
+peligrosidad_media = media_ponderada("indice_peligrosidad")
+\end{lstlisting}

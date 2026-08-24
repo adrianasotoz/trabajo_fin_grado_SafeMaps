@@ -110,7 +110,10 @@ Telecomunicación\xspace}
 \renewcommand{\headrulewidth}{0.4pt}
 
 % Formato del nombre de capítulo y sección en la cabecera
-\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter.\ #1}{}}
+% (\@chapapp es "Capítulo" en el cuerpo y "Apéndice" tras \appendix)
+\makeatletter
+\renewcommand{\chaptermark}[1]{\markboth{\@chapapp\ \thechapter.\ #1}{}}
+\makeatother
 \renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
 
 % ----------------------------------------------------------------
@@ -145,7 +148,12 @@ Telecomunicación\xspace}
   numbersep=8pt,
   numberstyle=\tiny\color{gray},
   breaklines=true,
-  captionpos=b
+  captionpos=b,
+  extendedchars=true,
+  literate=
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+    {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {ü}{{\"u}}1 {¿}{{?`}}1 {¡}{{!`}}1
 }
 
 % Estilo específico para SQL (útil para las consultas PostGIS/pgRouting)
@@ -220,18 +228,18 @@ Telecomunicación\xspace}
 \input{capitulos/07_Conclusiones}
 
 % ----------------------------------------------------------------
+% APÉNDICES
+% ----------------------------------------------------------------
+\appendix
+\input{apendices/apendice_etl}
+\input{apendices/apendice_sql}
+
+% ----------------------------------------------------------------
 % BIBLIOGRAFÍA
 % ----------------------------------------------------------------
 \backmatter
 \bibliographystyle{unsrt}
 \bibliography{bibliografia/bibliografia}
 \addcontentsline{toc}{chapter}{Bibliografía}
-
-% ----------------------------------------------------------------
-% APÉNDICES (descomenta cuando los tengas)
-% ----------------------------------------------------------------
-%\appendix
-%\input{apendices/apendice_etl}
-%\input{apendices/apendice_sql}
 
 \end{document}
