@@ -224,6 +224,15 @@ El índice de peligrosidad $p(e) \in [0, 1]$ no se utiliza directamente como cos
 
 donde $l(e)$ es la longitud real del tramo en metros y $\alpha = 4$ es una constante que determina cuánto se penaliza a los tramos más peligrosos: un tramo con $p(e) = 1$ cuesta, a efectos del algoritmo, cinco veces su longitud real, mientras que un tramo con $p(e) = 0$ cuesta exactamente su longitud. Este diseño tiene dos ventajas: el coste sigue expresado en una magnitud interpretable (metros equivalentes), y el algoritmo de Dijkstra —que minimiza la suma de costes— sigue teniendo un incentivo natural para preferir rutas cortas, matizado por la peligrosidad de cada tramo. El valor de $\alpha$ se fijó de forma empírica, comprobando sobre varios pares origen-destino que el sistema propone desvíos perceptibles pero razonables (véase el Capítulo~\ref{cap:pruebas}).
 
+La Figura~\ref{fig:mapa_peligrosidad} muestra el resultado de aplicar la Ecuación~\ref{eq:coste} a los 524\,292 tramos de la red. El patrón que emerge es coherente con lo que cabría esperar de una ciudad como Madrid: el índice de peligrosidad se concentra sobre todo en el distrito Centro y en los principales ejes de tráfico denso que lo atraviesan, mientras que la mayor parte de la periferia residencial presenta valores bajos. Este mapa anticipa, de forma visual, el patrón cuantitativo que se documenta con más detalle en el Capítulo~\ref{cap:pruebas}: los pares origen-destino que discurren por el centro son precisamente aquellos donde la ruta segura se desvía más de la ruta rápida.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{imagenes/mapa_peligrosidad.png}
+\caption{Índice de peligrosidad $p(e)$ por tramo en la red peatonal de Madrid (verde: bajo, rojo: alto). Generado por \texttt{scripts/10\_mapa\_peligrosidad.py}.}
+\label{fig:mapa_peligrosidad}
+\end{figure}
+
 % -----------------------------------------------------------------------
 % 3.6 IMPLEMENTACIÓN DEL ENRUTAMIENTO
 % -----------------------------------------------------------------------

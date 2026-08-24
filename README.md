@@ -53,6 +53,7 @@ tfg_rutas_seguras/
 │   ├── 07_calcular_indice_seguridad.py
 │   ├── 08_calcular_ruta.py
 │   ├── 09_evaluacion.py  # Evaluación comparativa ruta rápida vs. segura
+│   ├── 10_mapa_peligrosidad.py  # Mapa del índice de peligrosidad (figura de la memoria)
 │   └── rutas.py      # Lógica de cálculo de rutas, reutilizada por 08, 09 y por web/app.py
 ├── sql/              # Esquemas SQL, uno por fuente de datos
 ├── web/              # Visor web con Leaflet
@@ -145,6 +146,14 @@ python scripts/09_evaluacion.py
 ```
 
 Calcula ambas rutas sobre ocho pares origen-destino representativos de Madrid y guarda los resultados en `data/processed/evaluacion_rutas.csv` (usado en el Capítulo 6 de la memoria).
+
+### 10. Mapa del índice de peligrosidad
+
+```bash
+python scripts/10_mapa_peligrosidad.py
+```
+
+Genera `docs/imagenes/mapa_peligrosidad.png` (usado en el Capítulo 3 de la memoria) coloreando cada tramo de la red según su `indice_peligrosidad`.
 
 ### Visor web
 
