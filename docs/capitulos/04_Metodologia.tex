@@ -174,12 +174,12 @@ El frontend se implementa como una única página HTML (\texttt{web/templates/in
 
 El estado de la interfaz (puntos seleccionados, modo activo, última respuesta del servidor) se mantiene en un único objeto JavaScript en memoria, y el cambio entre modos \textit{simple} y \textit{detallado} se resuelve completamente en el cliente reutilizando la última respuesta de \texttt{/api/ruta}, sin necesidad de repetir la consulta de enrutamiento al backend.
 
-Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el prototipo en funcionamiento sobre el par Callao -- Puerta de Alcalá, uno de los pares origen-destino que se retoman con más detalle en la evaluación del Capítulo~\ref{cap:pruebas}. En el modo simple (Figura~\ref{fig:visor_simple}) se aprecia la ruta recomendada, su distancia y duración, y la insignia cualitativa de seguridad (\textit{Moderada} en este caso, al tratarse de un trayecto por el centro de Madrid). En el modo detallado (Figura~\ref{fig:visor_detallado}) se superponen ambas rutas —discontinua en azul la rápida, continua en verde la segura— junto con la tabla comparativa de indicadores, cuyos valores coinciden con los recogidos más adelante en la Tabla~\ref{tab:resultados_rutas}.
+Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el prototipo en funcionamiento sobre el par Puerta del Sol -- Atocha, uno de los pares origen-destino que se retoman con más detalle en la evaluación del Capítulo~\ref{cap:pruebas}. En el modo simple (Figura~\ref{fig:visor_simple}) se aprecia la ruta recomendada, su distancia y duración, y la insignia cualitativa de seguridad (\textit{Segura} en este caso). En el modo detallado (Figura~\ref{fig:visor_detallado}) se superponen ambas rutas —discontinua en azul la rápida, continua en verde la segura— junto con la tabla comparativa de indicadores, cuyos valores coinciden con los recogidos más adelante en la Tabla~\ref{tab:resultados_rutas}.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{imagenes/visor_simple.png}
-\caption{Visor web, modo simple, para el trayecto Callao -- Puerta de Alcalá.}
+\caption{Visor web, modo simple, para el trayecto Puerta del Sol -- Atocha.}
 \label{fig:visor_simple}
 \end{figure}
 
