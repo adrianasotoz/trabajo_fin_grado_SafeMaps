@@ -35,6 +35,9 @@ def api_ruta():
             rutas = {criterio: calcular_ruta(conn, origen, destino, criterio) for criterio in QUERY_EDGES}
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception:
+        app.logger.exception("Fallo calculando la ruta")
+        return jsonify({"error": "No se ha podido calcular la ruta. Inténtalo de nuevo."}), 503
 
     return jsonify(rutas)
 
@@ -45,20 +48,25 @@ def api_geocode():
     if not q:
         return jsonify({"error": "Falta el parámetro q"}), 400
 
-    resp = requests.get(
-        f"{NOMINATIM_URL}/search",
-        params={
-            "q": q,
-            "format": "json",
-            "limit": 5,
-            "countrycodes": "es",
-            "viewbox": MADRID_VIEWBOX,
-            "bounded": 1,
-        },
-        headers=NOMINATIM_HEADERS,
-        timeout=5,
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.get(
+            f"{NOMINATIM_URL}/search",
+            params={
+                "q": q,
+                "format": "json",
+                "limit": 5,
+                "countrycodes": "es",
+                "viewbox": MADRID_VIEWBOX,
+                "bounded": 1,
+            },
+            headers=NOMINATIM_HEADERS,
+            timeout=5,
+        )
+        resp.raise_for_status()
+    except requests.RequestException:
+        app.logger.exception("Fallo consultando Nominatim (geocode)")
+        return jsonify({"error": "No se pudo contactar con el servicio de geocodificación"}), 502
+
     resultados = [
         {"nombre": r["display_name"], "lon": float(r["lon"]), "lat": float(r["lat"])} for r in resp.json()
     ]
@@ -73,13 +81,18 @@ def api_geocode_inverso():
     except (KeyError, ValueError):
         return jsonify({"error": "Parámetros esperados: lon, lat"}), 400
 
-    resp = requests.get(
-        f"{NOMINATIM_URL}/reverse",
-        params={"lon": lon, "lat": lat, "format": "json", "zoom": 18},
-        headers=NOMINATIM_HEADERS,
-        timeout=5,
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.get(
+            f"{NOMINATIM_URL}/reverse",
+            params={"lon": lon, "lat": lat, "format": "json", "zoom": 18},
+            headers=NOMINATIM_HEADERS,
+            timeout=5,
+        )
+        resp.raise_for_status()
+    except requests.RequestException:
+        app.logger.exception("Fallo consultando Nominatim (geocode inverso)")
+        return jsonify({"nombre": f"{lat:.5f}, {lon:.5f}", "lon": lon, "lat": lat})
+
     datos = resp.json()
     nombre = datos.get("display_name", f"{lat:.5f}, {lon:.5f}")
     return jsonify({"nombre": nombre, "lon": lon, "lat": lat})

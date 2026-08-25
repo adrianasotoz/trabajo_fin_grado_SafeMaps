@@ -21,8 +21,8 @@
         --radio: 14px;
         --sombra: 0 1px 3px rgba(32,33,36,0.18), 0 4px 12px rgba(32,33,36,0.1);
     }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; color: var(--texto); }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100vh; height: 100dvh; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; color: var(--texto); }
     #app { display: flex; height: 100%; }
     #map { flex: 1; }
 
@@ -138,10 +138,40 @@
         border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,.45);
     }
 
+    button, .input-wrap, .sugerencias li { touch-action: manipulation; }
+
     @media (max-width: 720px) {
         #app { flex-direction: column; }
-        #panel { width: 100%; min-width: 0; height: auto; max-height: 55vh; order: 2; }
-        #map { order: 1; flex: 1; }
+        #panel {
+            width: 100%; min-width: 0; height: auto; max-height: 60dvh; order: 2;
+            padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+            gap: 10px; border-radius: 16px 16px 0 0;
+        }
+        #map { order: 1; flex: 1; min-height: 30dvh; }
+
+        #panel h1 { font-size: 16px; }
+        #panel .subtitulo { font-size: 12px; }
+
+        .input-wrap input { padding: 12px 0; font-size: 16px; }
+        .input-wrap button.icono { padding: 9px; }
+        .input-wrap button.icono svg { width: 20px; height: 20px; }
+        #boton-swap { width: 36px; height: 36px; }
+        #limpiar { padding: 12px; }
+
+        .modo-toggle button { padding: 10px; }
+
+        .sugerencias { max-height: 35dvh; }
+    }
+
+    @media (max-width: 380px) {
+        #panel { padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+        .tarjeta-simple .distancia { font-size: 19px; }
+    }
+
+    @media (max-width: 720px) and (orientation: landscape) and (max-height: 500px) {
+        #app { flex-direction: row; }
+        #panel { width: 320px; min-width: 260px; height: 100%; max-height: 100%; order: 1; border-radius: 0; }
+        #map { order: 2; min-height: 0; }
     }
 </style>
 </head>
@@ -322,6 +352,44 @@ function seleccionarPunto(campo, punto) {
 document.getElementById('input-origen').addEventListener('input', debounce((e) => buscarSugerencias('origen', e.target.value), 400));
 document.getElementById('input-destino').addEventListener('input', debounce((e) => buscarSugerencias('destino', e.target.value), 400));
 
+function activarNavegacionTeclado(campo) {
+    const input = document.getElementById(`input-${campo}`);
+    const lista = document.getElementById(`sugerencias-${campo}`);
+    let indice = -1;
+
+    input.addEventListener('input', () => { indice = -1; });
+
+    input.addEventListener('keydown', (e) => {
+        if (lista.hidden) return;
+        const items = Array.from(lista.querySelectorAll('li:not(.mensaje)'));
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            indice = (indice + 1) % items.length;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            indice = (indice - 1 + items.length) % items.length;
+        } else if (e.key === 'Enter') {
+            if (indice < 0) return;
+            e.preventDefault();
+            items[indice].click();
+            return;
+        } else if (e.key === 'Escape') {
+            lista.hidden = true;
+            indice = -1;
+            return;
+        } else {
+            return;
+        }
+
+        items.forEach((li, i) => li.classList.toggle('activa', i === indice));
+        items[indice].scrollIntoView({ block: 'nearest' });
+    });
+}
+activarNavegacionTeclado('origen');
+activarNavegacionTeclado('destino');
+
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.campo')) {
         document.getElementById('sugerencias-origen').hidden = true;
@@ -329,13 +397,30 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function mostrarErrorGeo(mensaje) {
+    document.getElementById('resultados').innerHTML = `<div id="error">${mensaje}</div>`;
+}
+
+const MENSAJES_ERROR_GEO = {
+    1: 'Has denegado el permiso de ubicación. Actívalo en los ajustes del navegador o escribe la dirección.',
+    2: 'No se ha podido determinar tu ubicación. Prueba a escribir la dirección.',
+    3: 'La solicitud de ubicación ha tardado demasiado. Prueba a escribir la dirección.',
+};
+
 document.getElementById('boton-ubicacion').addEventListener('click', () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { longitude: lon, latitude: lat } = pos.coords;
-        const nombre = await geocodificarInverso(lon, lat);
-        seleccionarPunto('origen', { lon, lat, nombre });
-    });
+    if (!navigator.geolocation) {
+        mostrarErrorGeo('Tu navegador no admite geolocalización.');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+            const { longitude: lon, latitude: lat } = pos.coords;
+            const nombre = await geocodificarInverso(lon, lat);
+            seleccionarPunto('origen', { lon, lat, nombre });
+        },
+        (err) => mostrarErrorGeo(MENSAJES_ERROR_GEO[err.code] || 'No se ha podido obtener tu ubicación.'),
+        { timeout: 8000 },
+    );
 });
 
 document.getElementById('boton-swap').addEventListener('click', () => {

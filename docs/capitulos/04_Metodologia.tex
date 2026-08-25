@@ -170,6 +170,7 @@ El frontend se implementa como una única página HTML (\texttt{web/templates/in
     \item La posibilidad de fijar cualquiera de los dos puntos haciendo \textbf{clic directamente sobre el mapa}, con geocodificación inversa automática para mostrar la dirección resultante en el campo correspondiente.
     \item Un botón para \textbf{intercambiar} origen y destino.
     \item Dos \textbf{modos de visualización}, descritos ya en la Sección~\ref{sec:visor}: \textit{simple}, con una única ruta recomendada y una insignia cualitativa de seguridad; y \textit{detallado}, con ambas rutas superpuestas y una tabla comparativa de los indicadores de la Sección~\ref{sec:funcion_coste}.
+    \item Una interfaz \textbf{adaptable (\textit{responsive})} a dispositivos móviles: por debajo de 720\,px de ancho el panel de búsqueda pasa de disposición lateral a apilada bajo el mapa, con unidades de \textit{viewport} dinámicas (\texttt{dvh}) para evitar el recorte que provoca la barra de direcciones de los navegadores móviles, y un caso específico para orientación horizontal en pantallas de poca altura.
 \end{itemize}
 
 El estado de la interfaz (puntos seleccionados, modo activo, última respuesta del servidor) se mantiene en un único objeto JavaScript en memoria, y el cambio entre modos \textit{simple} y \textit{detallado} se resuelve completamente en el cliente reutilizando la última respuesta de \texttt{/api/ruta}, sin necesidad de repetir la consulta de enrutamiento al backend.
