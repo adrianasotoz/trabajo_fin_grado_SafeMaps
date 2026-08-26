@@ -1,7 +1,7 @@
 \chapter{Descripción de la propuesta}
 \label{cap:propuesta}
 
-Este capítulo describe en detalle el sistema propuesto: su arquitectura general, las fuentes de datos utilizadas, el proceso de extracción y transformación de datos, el modelado de la red viaria, el diseño de la función de coste de seguridad y la implementación del enrutamiento. El sistema se denomina en adelante \textbf{SafeWalk-Madrid}.
+Este capítulo describe en detalle el sistema propuesto: su arquitectura general, las fuentes de datos utilizadas, el proceso de extracción y transformación de datos, el modelado de la red viaria, el diseño de la función de coste de seguridad y la implementación del enrutamiento. El sistema se denomina en adelante \textbf{SafeMaps-Madrid}.
 
 % -----------------------------------------------------------------------
 % 3.1 VISIÓN GENERAL DEL SISTEMA
@@ -9,7 +9,7 @@ Este capítulo describe en detalle el sistema propuesto: su arquitectura general
 \section{Visión general del sistema}
 \label{sec:vision_general}
 
-SafeWalk-Madrid es un sistema de cálculo de rutas seguras para peatones en el entorno urbano de Madrid. Su objetivo es ofrecer al usuario, dado un origen y un destino, una ruta que minimice la exposición a factores de riesgo urbano, como alternativa informada a la ruta más corta convencional.
+SafeMaps-Madrid es un sistema de cálculo de rutas seguras para peatones en el entorno urbano de Madrid. Su objetivo es ofrecer al usuario, dado un origen y un destino, una ruta que minimice la exposición a factores de riesgo urbano, como alternativa informada a la ruta más corta convencional.
 
 El sistema se articula en torno a cuatro componentes principales, cuya interacción se ilustra en la Figura~\ref{fig:arquitectura}:
 
@@ -56,11 +56,11 @@ El sistema se articula en torno a cuatro componentes principales, cuya interacci
 \draw[arr] (visor) -- (usuario) node[lbl, midway] {HTTP / JSON};
 
 \end{tikzpicture}
-\caption{Arquitectura general del sistema SafeWalk-Madrid. Los recuadros sólidos son los cuatro componentes principales descritos en esta sección; los recuadros discontinuos representan el contexto externo (fuentes de datos y usuario final). El motor de enrutamiento se ejecuta como extensión dentro de la misma instancia de PostgreSQL que la base de datos espacial.}
+\caption{Arquitectura general del sistema SafeMaps-Madrid. Los recuadros sólidos son los cuatro componentes principales descritos en esta sección; los recuadros discontinuos representan el contexto externo (fuentes de datos y usuario final). El motor de enrutamiento se ejecuta como extensión dentro de la misma instancia de PostgreSQL que la base de datos espacial.}
 \label{fig:arquitectura}
 \end{figure}
 
-A diferencia del planteamiento inicial del proyecto, la versión implementada de SafeWalk-Madrid \textbf{no distingue franjas horarias}: el coste de seguridad de cada arista es único e independiente de la hora del día. Esta simplificación se adoptó por dos motivos. Primero, los datos de accidentalidad disponibles no permiten una segmentación diurna/nocturna suficientemente robusta como para calcular dos indicadores fiables sin perder densidad muestral en buena parte de la red. Segundo, al no disponerse de un indicador de criminalidad real (véase la Sección~\ref{subsec:vulnerabilidad_datos}), el argumento principal para justificar la ponderación temporal —la variación día/noche del riesgo de criminalidad documentada por Levy et al. \cite{levy2020}— pierde parte de su fundamento en este sistema. La incorporación de una dimensión temporal se plantea como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
+A diferencia del planteamiento inicial del proyecto, la versión implementada de SafeMaps-Madrid \textbf{no distingue franjas horarias}: el coste de seguridad de cada arista es único e independiente de la hora del día. Esta simplificación se adoptó por dos motivos. Primero, los datos de accidentalidad disponibles no permiten una segmentación diurna/nocturna suficientemente robusta como para calcular dos indicadores fiables sin perder densidad muestral en buena parte de la red. Segundo, al no disponerse de un indicador de criminalidad real (véase la Sección~\ref{subsec:vulnerabilidad_datos}), el argumento principal para justificar la ponderación temporal —la variación día/noche del riesgo de criminalidad documentada por Levy et al. \cite{levy2020}— pierde parte de su fundamento en este sistema. La incorporación de una dimensión temporal se plantea como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
 
 % -----------------------------------------------------------------------
 % 3.2 FUENTES DE DATOS
