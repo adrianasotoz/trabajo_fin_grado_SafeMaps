@@ -9,7 +9,7 @@ Este capítulo cierra la memoria evaluando en qué medida se han alcanzado los o
 \section{Grado de cumplimiento de los objetivos}
 \label{sec:cumplimiento_objetivos}
 
-El objetivo general (Sección~\ref{subsec:objetivo_general}) —diseñar y desarrollar un sistema de cálculo de rutas seguras para peatones en Madrid, integrando iluminación, vulnerabilidad territorial y accidentalidad mediante enrutamiento sobre grafos ponderados— se considera \textbf{alcanzado}: el Capítulo~\ref{cap:pruebas} ha demostrado, sobre casos concretos, que el sistema resultante ofrece efectivamente una alternativa medible en seguridad a la ruta más corta convencional. La Tabla~\ref{tab:cumplimiento_oe} detalla el grado de cumplimiento de cada uno de los seis objetivos específicos (Sección~\ref{subsec:objetivos_especificos}).
+El objetivo general (Sección~\ref{subsec:objetivo_general}) —diseñar y desarrollar un sistema de cálculo de rutas seguras para peatones en Madrid, integrando iluminación, vulnerabilidad territorial y accidentalidad mediante enrutamiento sobre grafos ponderados— se considera \textbf{alcanzado}: el Capítulo~\ref{cap:pruebas} ha demostrado, sobre casos concretos, que el sistema resultante ofrece efectivamente una alternativa medible en seguridad a la ruta rápida convencional. La Tabla~\ref{tab:cumplimiento_oe} detalla el grado de cumplimiento de cada uno de los seis objetivos específicos (Sección~\ref{subsec:objetivos_especificos}).
 
 \begin{table}[h]
 \centering
@@ -65,7 +65,7 @@ A lo largo de la memoria se han ido señalando limitaciones puntuales del sistem
 \section{Líneas de trabajo futuro}
 \label{sec:trabajo_futuro}
 
-Cada limitación de la Sección~\ref{sec:limitaciones_sistema} define una línea de trabajo futuro directa:
+Varias de las limitaciones señaladas en la Sección~\ref{sec:limitaciones_sistema} dan lugar a una línea de trabajo futuro directa; a ellas se suman otras líneas de generalización y madurez del sistema:
 
 \begin{enumerate}
     \item \textbf{Incorporar una fuente de criminalidad real.} Si en el futuro se publicara algún indicador de criminalidad geolocalizado para Madrid —aunque fuera agregado a un nivel más fino que el distrito, por ejemplo por barrio o sección censal—, sustituir el índice de vulnerabilidad territorial por dicho indicador reforzaría directamente la validez del componente de seguridad ciudadana del sistema.
@@ -87,4 +87,4 @@ Cada limitación de la Sección~\ref{sec:limitaciones_sistema} define una línea
 \section{Conclusión final}
 \label{sec:conclusion_final}
 
-Este Trabajo Fin de Grado ha demostrado la viabilidad de construir, a partir de datos abiertos georreferenciados y de un motor de enrutamiento sobre grafos ponderados, un sistema que ofrece a los peatones una alternativa medible a la ruta más corta convencional: una ruta que sacrifica, de media, un incremento moderado de distancia a cambio de una reducción sustancial de la exposición a los factores de riesgo urbano modelados. El sistema resultante —desde el proceso ETL hasta el prototipo de visor web— queda documentado e implementado en su totalidad en el repositorio del proyecto, y las limitaciones señaladas en este capítulo definen un camino de continuidad claro, y no un obstáculo, para su evolución futura.
+Este Trabajo Fin de Grado ha demostrado la viabilidad de construir, a partir de datos abiertos georreferenciados y de un motor de enrutamiento sobre grafos ponderados, un sistema que ofrece a los peatones una alternativa medible a la ruta rápida convencional: una ruta que sacrifica, de media, un incremento moderado de distancia a cambio de una reducción sustancial de la exposición a los factores de riesgo urbano modelados. El sistema resultante —desde el proceso ETL hasta el prototipo de visor web— queda documentado e implementado en su totalidad en el repositorio del proyecto, y las limitaciones señaladas en este capítulo definen un camino de continuidad claro, y no un obstáculo, para su evolución futura.

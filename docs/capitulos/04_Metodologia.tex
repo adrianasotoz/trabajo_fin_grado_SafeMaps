@@ -128,7 +128,7 @@ Todas las tablas con columna de geometría (\texttt{nodes}, \texttt{edges}, \tex
 El repositorio del proyecto se organiza en los siguientes directorios principales:
 
 \begin{itemize}
-    \item \texttt{scripts/} — los ocho scripts ETL y de cálculo descritos en la Sección~\ref{sec:metodologia_desarrollo}, más el módulo \texttt{rutas.py}.
+    \item \texttt{scripts/} — los ocho scripts ETL y de cálculo descritos en la Sección~\ref{sec:metodologia_desarrollo}, más el módulo \texttt{rutas.py} y los scripts \texttt{09\_evaluacion.py} y \texttt{10\_mapa\_peligrosidad.py}, usados respectivamente para la evaluación comparativa del Capítulo~\ref{cap:pruebas} y para generar la Figura~\ref{fig:mapa_peligrosidad}.
     \item \texttt{sql/} — un fichero de esquema SQL por cada fuente de datos, ejecutado por su script correspondiente al inicio de cada ejecución.
     \item \texttt{data/raw/} y \texttt{data/processed/} — datos originales descargados y datos derivados (como las rutas de ejemplo exportadas a GeoJSON), excluidos del control de versiones por su tamaño.
     \item \texttt{web/} — el prototipo de visor cartográfico (Sección~\ref{sec:backend_visor}).
