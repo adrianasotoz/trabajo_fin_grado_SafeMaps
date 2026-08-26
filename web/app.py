@@ -118,9 +118,16 @@ def api_ruta():
     except (KeyError, ValueError):
         return jsonify({"error": "Parámetros esperados: origen_lon, origen_lat, destino_lon, destino_lat"}), 400
 
-    try:
+    def _calcular(criterio):
+        # Conexión propia por hilo: los objetos Connection de SQLAlchemy no
+        # son seguros para compartir entre hilos.
         with engine.connect() as conn:
-            rutas = {criterio: calcular_ruta(conn, origen, destino, criterio) for criterio in QUERY_EDGES}
+            return calcular_ruta(conn, origen, destino, criterio)
+
+    try:
+        with ThreadPoolExecutor(max_workers=len(QUERY_EDGES)) as pool:
+            futuros = {criterio: pool.submit(_calcular, criterio) for criterio in QUERY_EDGES}
+            rutas = {criterio: futuro.result() for criterio, futuro in futuros.items()}
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
     except Exception:

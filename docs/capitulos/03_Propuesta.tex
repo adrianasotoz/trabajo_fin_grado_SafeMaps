@@ -287,13 +287,18 @@ LIMIT 1;
 
 La consulta de enrutamiento propiamente dicha tiene la siguiente estructura:
 
-\begin{lstlisting}[style=SQL, caption={Consulta pgRouting para el cálculo de la ruta segura.}, label={lst:pgrouting}]
+\begin{lstlisting}[style=SQL, caption={Consulta pgRouting para el cálculo de la ruta segura, acotada a la ventana geográfica de origen y destino.}, label={lst:pgrouting}]
 SELECT r.edge, e.geom, e.length, e.indice_peligrosidad
 FROM pgr_dijkstra(
-    'SELECT id, source, target,
-            cost_seguro AS cost,
-            reverse_cost_seguro AS reverse_cost
-     FROM edges',
+    -- :query construye en Python la consulta de aristas ya con
+    -- la ventana geográfica (lon_min, lat_min, lon_max, lat_max
+    -- y margen) resuelta a valores concretos, p. ej.:
+    -- 'SELECT id, source, target, cost_seguro AS cost,
+    --         reverse_cost_seguro AS reverse_cost
+    --  FROM edges
+    --  WHERE geom && ST_Expand(ST_MakeEnvelope(
+    --      lon_min, lat_min, lon_max, lat_max, 4326), margen)'
+    :query,
     :origen_id, :destino_id,
     directed => false
 ) r
@@ -304,6 +309,29 @@ ORDER BY r.seq;
 El parámetro \texttt{directed => false} indica que el grafo se trata como no dirigido (Sección~\ref{sec:modelado_red}), por lo que \texttt{pgr\_dijkstra} puede recorrer cada arista en cualquier sentido usando indistintamente \texttt{cost} o \texttt{reverse\_cost} —en este sistema, siempre iguales—. Las filas resultantes se agregan en Python para reconstruir la geometría completa de la ruta y calcular sus estadísticas agregadas: distancia total, duración estimada (a una velocidad peatonal de referencia de 5\,km/h) y una media ponderada por longitud del índice de peligrosidad y del resto de indicadores de cada tramo recorrido.
 
 Para el cálculo de la ruta más corta convencional (usada como referencia comparativa en el visor y en la validación), se utiliza la misma función pero sustituyendo las columnas de coste seguro por \texttt{cost} y \texttt{reverse\_cost}, que contienen directamente la longitud del tramo sin penalización alguna.
+
+\subsection{Acotación geográfica de la consulta y elección del algoritmo}
+\label{subsec:optimizacion_enrutamiento}
+
+La primera versión de la consulta anterior no incluía la cláusula \texttt{WHERE}: se le pasaba a \texttt{pgr\_dijkstra} la red completa (\texttt{SELECT id, source, target, cost, reverse\_cost FROM edges}, sin condición alguna), delegando en el propio algoritmo la tarea de ignorar las zonas irrelevantes del grafo. Medido con \texttt{EXPLAIN ANALYZE} sobre la base de datos del proyecto (174\,394 nodos, 524\,292 aristas), esa consulta sin acotar tarda entre 1,5 y 1,9\,s por criterio, independientemente de lo corta que sea la ruta resultante, porque \texttt{pgr\_dijkstra} debe leer y materializar las 524\,292 filas de \texttt{edges} en cada invocación antes de empezar siquiera a buscar el camino.
+
+La solución adoptada acota esa consulta a una ventana geográfica alrededor de origen y destino, apoyándose en el índice espacial \texttt{idx\_edges\_geom} (Sección~\ref{sec:modelado_red}) mediante el operador de solapamiento \texttt{\&\&}: el margen de la ventana es como mínimo de $0{,}01^\circ$ (aproximadamente 1\,km) y crece proporcionalmente a la distancia entre los dos puntos, para dar margen suficiente a los desvíos que introduce el criterio de ruta segura. Si la ventana excluyera por error el único camino posible entre dos puntos —por ejemplo, un cruce obligatorio muy alejado de la línea recta entre origen y destino—, \texttt{calcular\_ruta()} repite la consulta sin acotar antes de concluir que no existe ruta, de modo que la optimización nunca puede producir un resultado peor que antes, como mucho más lento en ese caso límite. Se comprobó, comparando la secuencia exacta de tramos devuelta con y sin acotar sobre varios pares origen-destino de distinta longitud, que ambas versiones producen la misma ruta; la acotación solo reduce el volumen de datos que \texttt{pgr\_dijkstra} tiene que leer, sin alterar el resultado. El efecto en los tiempos medidos es sustancial:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\hline
+\textbf{Trayecto} & \textbf{Sin acotar} & \textbf{Acotado} \\
+\hline
+Corto (Puerta del Sol -- Atocha, 1,9\,km) & 1,5\,s & 0,1--0,3\,s \\
+Largo (10,8\,km) & 1,9\,s & 0,7\,s \\
+\hline
+\end{tabular}
+\caption{Tiempo de ejecución de \texttt{pgr\_dijkstra} con y sin acotar la consulta de aristas, por criterio de coste.}
+\label{tab:optimizacion_dijkstra}
+\end{table}
+
+Antes de adoptar esta solución se evaluó también sustituir \texttt{pgr\_dijkstra} por \texttt{pgr\_aStar}, la variante de pgRouting que incorpora la heurística de distancia en línea recta descrita en la Sección~\ref{subsec:grafos} (dado que el coste seguro nunca es inferior a la longitud real del tramo —Sección~\ref{subsec:coste_enrutamiento}—, esa heurística es admisible también para el criterio de ruta segura, y \texttt{pgr\_aStar} garantiza por tanto encontrar la misma ruta óptima). Sin embargo, medido sobre los mismos trayectos, \texttt{pgr\_aStar} resultó sistemáticamente más lento que \texttt{pgr\_dijkstra}, tanto acotado (0,2\,s frente a 0,1\,s) como sin acotar (2,3\,s frente a 1,5\,s): \texttt{pgr\_aStar} necesita además las coordenadas de los nodos de cada arista para evaluar la heurística, lo que obliga a añadir dos \texttt{JOIN} contra la tabla \texttt{nodes} en la consulta de entrada, y ese coste adicional supera con creces el ahorro de explorar menos nodos durante la búsqueda. En otras palabras: el cuello de botella de este sistema nunca fue el algoritmo de búsqueda en sí, sino el volumen de datos que hay que leer antes de poder empezar a buscar, por lo que se mantiene \texttt{pgr\_dijkstra} y se opta por acotar la consulta de entrada en lugar de cambiar de algoritmo.
 
 % -----------------------------------------------------------------------
 % 3.7 PROTOTIPO DEL VISOR CARTOGRÁFICO
