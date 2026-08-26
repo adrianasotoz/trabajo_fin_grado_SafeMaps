@@ -31,7 +31,7 @@ El desarrollo se ha organizado en las siguientes ocho fases:
     \item \textbf{F3 — Configuración del entorno y carga de la red viaria} (4 -- 29 mayo): puesta en marcha de la base de datos \texttt{safe\_maps} y desarrollo de \texttt{01\_download\_osm.py} y \texttt{02\_load\_osm\_to\_db.py}.
     \item \textbf{F4 — ETL de las fuentes de seguridad} (1 junio -- 10 julio): desarrollo de los scripts \texttt{03} a \texttt{06} (farolas, accidentes, vulnerabilidad territorial y distritos), la fase de mayor duración del proyecto por incluir cuatro fuentes de datos heterogéneas.
     \item \textbf{F5 — Índice de seguridad y motor de enrutamiento} (13 -- 31 julio): diseño de la función de coste (Sección~\ref{sec:funcion_coste}) y desarrollo de \texttt{07\_calcular\_indice\_seguridad.py}, \texttt{rutas.py} y \texttt{08\_calcular\_ruta.py}.
-    \item \textbf{F6 — Prototipo del visor web} (3 -- 21 agosto): desarrollo del backend Flask y el frontend Leaflet (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}), incluyendo el rediseño posterior con buscador Nominatim y los modos simple/detallado.
+    \item \textbf{F6 — Prototipo del visor web} (3 -- 21 agosto): desarrollo del backend Flask y el frontend Leaflet (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}), incluyendo el rediseño posterior del buscador de direcciones (CartoCiudad y Nominatim combinados) y los modos simple/detallado.
     \item \textbf{F7 — Redacción de la memoria: capítulos 1 a 4} (20 -- 24 agosto): redacción de la introducción, el estado del arte, la propuesta y la metodología, en paralelo con el cierre de F6.
     \item \textbf{F8 — Pruebas, gestión, conclusiones y revisión final} (25 agosto -- 1 septiembre): redacción de los capítulos de pruebas y validación, gestión del proyecto y conclusiones, elaboración de apéndices y revisión final antes de la solicitud de evaluación.
 \end{enumerate}
@@ -86,7 +86,7 @@ Al tratarse de un Trabajo Fin de Grado, el proyecto no ha generado ningún desem
 
 \textbf{Recursos materiales.} Se contabiliza la amortización del equipo portátil personal empleado para el desarrollo, calculada de forma lineal sobre una vida útil de 4 años y prorrateada a los 6 meses de duración del proyecto.
 
-\textbf{Software.} Todas las herramientas empleadas —PostgreSQL, PostGIS, pgRouting, Python y sus bibliotecas, Flask y Leaflet (Tabla~\ref{tab:stack})— son de código abierto y sin coste de licencia. Las fuentes de datos utilizadas (OpenStreetMap, Datos Abiertos del Ayuntamiento de Madrid, Geoportal de Madrid, Nominatim) son igualmente de acceso público y gratuito.
+\textbf{Software.} Todas las herramientas empleadas —PostgreSQL, PostGIS, pgRouting, Python y sus bibliotecas, Flask y Leaflet (Tabla~\ref{tab:stack})— son de código abierto y sin coste de licencia. Las fuentes de datos utilizadas (OpenStreetMap, Datos Abiertos del Ayuntamiento de Madrid, Geoportal de Madrid, Nominatim, CartoCiudad del Instituto Geográfico Nacional) son igualmente de acceso público y gratuito.
 
 \begin{table}[h]
 \centering

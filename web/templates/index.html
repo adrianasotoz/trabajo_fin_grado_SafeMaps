@@ -62,6 +62,8 @@
         display: flex; color: var(--azul);
     }
     .input-wrap button.icono:hover { background: #e8f0fe; }
+    .input-wrap button.icono[hidden] { display: none; }
+    .input-wrap button.boton-borrar { color: var(--texto-suave); }
 
     #boton-swap {
         align-self: center; margin: -10px 0; border: 1px solid var(--borde); background: white;
@@ -78,6 +80,11 @@
     .sugerencias li { padding: 8px 10px; font-size: 13px; border-radius: 6px; cursor: pointer; }
     .sugerencias li:hover, .sugerencias li.activa { background: var(--fondo-suave); }
     .sugerencias li.mensaje { color: var(--texto-suave); cursor: default; }
+    .sugerencias li.sugerencia { display: flex; align-items: flex-start; gap: 10px; }
+    .sugerencia-icono { flex-shrink: 0; color: var(--texto-suave); margin-top: 2px; }
+    .sugerencia-texto { display: flex; flex-direction: column; min-width: 0; }
+    .sugerencia-principal { color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sugerencia-secundario { font-size: 12px; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     #resultados { display: flex; flex-direction: column; gap: 12px; }
     .ayuda { font-size: 13px; color: var(--texto-suave); line-height: 1.5; }
@@ -191,6 +198,9 @@
             <div class="input-wrap">
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="currentColor"/><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg>
                 <input id="input-origen" placeholder="Escribe una dirección o haz clic en el mapa" autocomplete="off">
+                <button class="icono boton-borrar" id="boton-borrar-origen" title="Borrar" hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
                 <button class="icono" id="boton-ubicacion" title="Usar mi ubicación">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
                 </button>
@@ -207,6 +217,9 @@
             <div class="input-wrap">
                 <div class="pin-destino" style="width:12px;height:12px;flex-shrink:0;"></div>
                 <input id="input-destino" placeholder="Escribe una dirección o haz clic en el mapa" autocomplete="off">
+                <button class="icono boton-borrar" id="boton-borrar-destino" title="Borrar" hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
             </div>
             <ul class="sugerencias" id="sugerencias-destino" hidden></ul>
         </div>
@@ -314,7 +327,26 @@ async function buscarSugerencias(campo, texto) {
     lista.innerHTML = '';
     resultados.forEach((r) => {
         const li = document.createElement('li');
-        li.textContent = r.nombre;
+        li.className = 'sugerencia';
+
+        const icono = document.createElement('span');
+        icono.className = 'sugerencia-icono';
+        icono.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+
+        const texto = document.createElement('span');
+        texto.className = 'sugerencia-texto';
+        const principal = document.createElement('span');
+        principal.className = 'sugerencia-principal';
+        principal.textContent = r.principal || r.nombre;
+        texto.appendChild(principal);
+        if (r.secundario) {
+            const secundario = document.createElement('span');
+            secundario.className = 'sugerencia-secundario';
+            secundario.textContent = r.secundario;
+            texto.appendChild(secundario);
+        }
+
+        li.append(icono, texto);
         li.addEventListener('click', () => seleccionarPunto(campo, { lon: r.lon, lat: r.lat, nombre: r.nombre }));
         lista.appendChild(li);
     });
@@ -332,9 +364,15 @@ async function geocodificarInverso(lon, lat) {
 
 // ---------- selección de puntos ----------
 
+function actualizarBotonBorrar(campo) {
+    const tieneTexto = document.getElementById(`input-${campo}`).value.trim().length > 0;
+    document.getElementById(`boton-borrar-${campo}`).hidden = !tieneTexto;
+}
+
 function seleccionarPunto(campo, punto) {
     document.getElementById(`sugerencias-${campo}`).hidden = true;
     document.getElementById(`input-${campo}`).value = punto.nombre;
+    actualizarBotonBorrar(campo);
 
     if (campo === 'origen') {
         estado.origen = punto;
@@ -349,8 +387,30 @@ function seleccionarPunto(campo, punto) {
     if (estado.origen && estado.destino) calcularRutas();
 }
 
+function borrarCampo(campo) {
+    document.getElementById(`input-${campo}`).value = '';
+    document.getElementById(`sugerencias-${campo}`).hidden = true;
+    document.getElementById(`sugerencias-${campo}`).innerHTML = '';
+    actualizarBotonBorrar(campo);
+
+    if (campo === 'origen') {
+        estado.origen = null;
+        if (estado.marcadorOrigen) map.removeLayer(estado.marcadorOrigen);
+        estado.marcadorOrigen = null;
+    } else {
+        estado.destino = null;
+        if (estado.marcadorDestino) map.removeLayer(estado.marcadorDestino);
+        estado.marcadorDestino = null;
+    }
+    limpiarResultados();
+}
+
 document.getElementById('input-origen').addEventListener('input', debounce((e) => buscarSugerencias('origen', e.target.value), 400));
 document.getElementById('input-destino').addEventListener('input', debounce((e) => buscarSugerencias('destino', e.target.value), 400));
+document.getElementById('input-origen').addEventListener('input', () => actualizarBotonBorrar('origen'));
+document.getElementById('input-destino').addEventListener('input', () => actualizarBotonBorrar('destino'));
+document.getElementById('boton-borrar-origen').addEventListener('click', () => borrarCampo('origen'));
+document.getElementById('boton-borrar-destino').addEventListener('click', () => borrarCampo('destino'));
 
 function activarNavegacionTeclado(campo) {
     const input = document.getElementById(`input-${campo}`);
@@ -567,19 +627,25 @@ function renderizarDetallado(datos) {
 
 // ---------- limpiar ----------
 
+function limpiarResultados() {
+    estado.ultimaRespuesta = null;
+    limpiarCapasRutas();
+    document.getElementById('resultados').innerHTML =
+        '<p class="ayuda">Elige un origen y un destino escribiendo una dirección o haciendo clic en el mapa.</p>';
+}
+
 function limpiar() {
     estado.origen = null;
     estado.destino = null;
-    estado.ultimaRespuesta = null;
     if (estado.marcadorOrigen) map.removeLayer(estado.marcadorOrigen);
     if (estado.marcadorDestino) map.removeLayer(estado.marcadorDestino);
     estado.marcadorOrigen = null;
     estado.marcadorDestino = null;
-    limpiarCapasRutas();
+    limpiarResultados();
     document.getElementById('input-origen').value = '';
     document.getElementById('input-destino').value = '';
-    document.getElementById('resultados').innerHTML =
-        '<p class="ayuda">Elige un origen y un destino escribiendo una dirección o haciendo clic en el mapa.</p>';
+    actualizarBotonBorrar('origen');
+    actualizarBotonBorrar('destino');
 }
 document.getElementById('limpiar').addEventListener('click', limpiar);
 </script>

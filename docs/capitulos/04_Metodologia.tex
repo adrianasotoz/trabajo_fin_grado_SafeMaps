@@ -150,11 +150,11 @@ El backend del prototipo se implementa como una aplicación \textbf{Flask} de un
 \begin{itemize}
     \item \texttt{GET /} — sirve la página HTML del visor.
     \item \texttt{GET /api/ruta} — recibe las coordenadas de origen y destino como parámetros de consulta, invoca \texttt{calcular\_ruta()} (Sección~\ref{sec:enrutamiento}) una vez por cada criterio (\texttt{rapida} y \texttt{segura}) y devuelve ambos resultados en un único objeto JSON.
-    \item \texttt{GET /api/geocode} — recibe un texto de búsqueda y actúa de \textit{proxy} hacia el servicio de geocodificación Nominatim de OpenStreetMap, acotando la búsqueda al término municipal de Madrid mediante los parámetros \texttt{countrycodes} y \texttt{viewbox}.
-    \item \texttt{GET /api/geocode/inverso} — recibe unas coordenadas y devuelve la dirección más cercana, también vía Nominatim, usada al hacer clic directamente sobre el mapa.
+    \item \texttt{GET /api/geocode} — recibe un texto de búsqueda y consulta en paralelo (mediante un \texttt{ThreadPoolExecutor}) dos servicios de geocodificación: \textbf{CartoCiudad}, el geocodificador oficial del Instituto Geográfico Nacional basado en el Catastro, y \textbf{Nominatim}, el geocodificador de OpenStreetMap. Ambos son complementarios: CartoCiudad resuelve con precisión el número de portal de cualquier dirección de Madrid —algo que Nominatim solo consigue cuando existe en OSM un punto de interés etiquetado con ese número exacto—, mientras que Nominatim es quien indexa nombres de establecimientos y lugares (comercios, museos, monumentos) que no tienen entrada en el Catastro. Los resultados de ambos se combinan, se eliminan duplicados —tanto por proximidad de coordenadas como por coincidencia del texto mostrado— y se devuelven ya divididos en una línea principal y una línea secundaria de contexto (barrio, distrito o municipio).
+    \item \texttt{GET /api/geocode/inverso} — recibe unas coordenadas y devuelve la dirección más cercana vía Nominatim, usada al hacer clic directamente sobre el mapa.
 \end{itemize}
 
-Que el backend actúe como intermediario de Nominatim, en lugar de que el cliente lo consulte directamente, tiene dos motivos: permite fijar desde el servidor una cabecera \texttt{User-Agent} identificativa de la aplicación, tal como recomienda la política de uso de Nominatim, y evita exponer la URL del servicio externo directamente al código JavaScript servido al navegador.
+Que el backend actúe como intermediario de estos servicios, en lugar de que el cliente los consulte directamente, tiene varios motivos: permite fijar desde el servidor una cabecera \texttt{User-Agent} identificativa de la aplicación, tal como recomienda la política de uso de Nominatim; evita exponer al código JavaScript servido al navegador las URLs de los servicios externos; y es el único punto donde tiene sentido combinar y deduplicar las dos fuentes antes de enviar una única lista de sugerencias al cliente.
 
 % -----------------------------------------------------------------------
 % 4.6 IMPLEMENTACIÓN DEL FRONTEND DEL VISOR
@@ -165,7 +165,7 @@ Que el backend actúe como intermediario de Nominatim, en lugar de que el client
 El frontend se implementa como una única página HTML (\texttt{web/templates/index.html}) con JavaScript nativo (sin \textit{frameworks} como React o Vue) y \textbf{Leaflet} como biblioteca de mapas, lo que mantiene el prototipo ligero y sin pasos de compilación. Sus elementos principales son:
 
 \begin{itemize}
-    \item Un \textbf{campo de búsqueda} por cada punto (origen y destino), con autocompletado contra \texttt{/api/geocode}: la petición se lanza con un \textit{debounce} de 400\,ms tras dejar de escribir, para no saturar el servicio de geocodificación con una petición por cada pulsación de tecla.
+    \item Un \textbf{campo de búsqueda} por cada punto (origen y destino), con autocompletado contra \texttt{/api/geocode}: la petición se lanza con un \textit{debounce} de 400\,ms tras dejar de escribir, para no saturar los servicios de geocodificación con una petición por cada pulsación de tecla. Cada sugerencia se muestra en dos líneas —nombre y contexto geográfico, al estilo de los buscadores de mapas habituales— y un botón para vaciar el campo de un solo clic evita tener que borrar el texto carácter a carácter.
     \item Un botón de \textbf{geolocalización} que usa la API \texttt{navigator.geolocation} del navegador para fijar el origen en la posición actual del usuario.
     \item La posibilidad de fijar cualquiera de los dos puntos haciendo \textbf{clic directamente sobre el mapa}, con geocodificación inversa automática para mostrar la dirección resultante en el campo correspondiente.
     \item Un botón para \textbf{intercambiar} origen y destino.
@@ -175,12 +175,12 @@ El frontend se implementa como una única página HTML (\texttt{web/templates/in
 
 El estado de la interfaz (puntos seleccionados, modo activo, última respuesta del servidor) se mantiene en un único objeto JavaScript en memoria, y el cambio entre modos \textit{simple} y \textit{detallado} se resuelve completamente en el cliente reutilizando la última respuesta de \texttt{/api/ruta}, sin necesidad de repetir la consulta de enrutamiento al backend.
 
-La Figura~\ref{fig:visor_buscador} muestra el buscador de direcciones en funcionamiento: mientras el usuario escribe, el campo consulta \texttt{/api/geocode} con el \textit{debounce} descrito más arriba y despliega una lista de sugerencias acotadas al municipio de Madrid, de la que se selecciona una para fijar el origen o el destino.
+La Figura~\ref{fig:visor_buscador} muestra el buscador de direcciones en funcionamiento: mientras el usuario escribe, el campo consulta \texttt{/api/geocode} con el \textit{debounce} descrito más arriba y despliega una lista de sugerencias acotadas al municipio de Madrid, de la que se selecciona una para fijar el origen o el destino. El ejemplo de la figura, una dirección con número de portal, ilustra precisamente el motivo de combinar ambos geocodificadores: es CartoCiudad, y no Nominatim, quien resuelve el número exacto (22) en las sugerencias mostradas.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{imagenes/visor_buscador.png}
-\caption{Buscador de direcciones con autocompletado contra \texttt{/api/geocode}, mostrando las sugerencias para "Puerta del Sol".}
+\caption{Buscador de direcciones con autocompletado contra \texttt{/api/geocode}, mostrando las sugerencias para "Paseo de la Castellana 22".}
 \label{fig:visor_buscador}
 \end{figure}
 
