@@ -67,9 +67,12 @@ def api_geocode():
         app.logger.exception("Fallo consultando Nominatim (geocode)")
         return jsonify({"error": "No se pudo contactar con el servicio de geocodificación"}), 502
 
-    resultados = [
-        {"nombre": r["display_name"], "lon": float(r["lon"]), "lat": float(r["lat"])} for r in resp.json()
-    ]
+    resultados = []
+    for r in resp.json():
+        try:
+            resultados.append({"nombre": r["display_name"], "lon": float(r["lon"]), "lat": float(r["lat"])})
+        except (KeyError, ValueError):
+            continue
     return jsonify(resultados)
 
 

@@ -76,6 +76,10 @@ def calcular_ruta(conn, origen, destino, criterio="segura"):
     if not filas:
         raise ValueError("No se ha encontrado ruta entre los puntos indicados.")
 
+    distancia_m = sum(fila.length for fila in filas)
+    if distancia_m == 0:
+        raise ValueError("El origen y el destino son el mismo punto.")
+
     segmentos = [wkt.loads(fila.geom_wkt) for fila in filas]
     geometria = linemerge(segmentos)
     if geometria.geom_type != "LineString":
@@ -85,8 +89,6 @@ def calcular_ruta(conn, origen, destino, criterio="segura"):
         for seg in segmentos:
             coords.extend(seg.coords)
         geometria = LineString(coords)
-
-    distancia_m = sum(fila.length for fila in filas)
 
     def media_ponderada(campo):
         return sum(fila.length * getattr(fila, campo) for fila in filas) / distancia_m

@@ -397,8 +397,17 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function mostrarError(mensaje) {
+    const contenedor = document.getElementById('resultados');
+    contenedor.innerHTML = '';
+    const div = document.createElement('div');
+    div.id = 'error';
+    div.textContent = mensaje;
+    contenedor.appendChild(div);
+}
+
 function mostrarErrorGeo(mensaje) {
-    document.getElementById('resultados').innerHTML = `<div id="error">${mensaje}</div>`;
+    mostrarError(mensaje);
 }
 
 const MENSAJES_ERROR_GEO = {
@@ -485,7 +494,7 @@ async function calcularRutas() {
         estado.ultimaRespuesta = datos;
         renderizarResultado(datos);
     } catch (err) {
-        document.getElementById('resultados').innerHTML = `<div id="error">${err.message}</div>`;
+        mostrarError(err.message);
     }
 }
 
