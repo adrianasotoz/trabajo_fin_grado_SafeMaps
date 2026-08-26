@@ -175,6 +175,15 @@ El frontend se implementa como una única página HTML (\texttt{web/templates/in
 
 El estado de la interfaz (puntos seleccionados, modo activo, última respuesta del servidor) se mantiene en un único objeto JavaScript en memoria, y el cambio entre modos \textit{simple} y \textit{detallado} se resuelve completamente en el cliente reutilizando la última respuesta de \texttt{/api/ruta}, sin necesidad de repetir la consulta de enrutamiento al backend.
 
+La Figura~\ref{fig:visor_buscador} muestra el buscador de direcciones en funcionamiento: mientras el usuario escribe, el campo consulta \texttt{/api/geocode} con el \textit{debounce} descrito más arriba y despliega una lista de sugerencias acotadas al municipio de Madrid, de la que se selecciona una para fijar el origen o el destino.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{imagenes/visor_buscador.png}
+\caption{Buscador de direcciones con autocompletado contra \texttt{/api/geocode}, mostrando las sugerencias para "Puerta del Sol".}
+\label{fig:visor_buscador}
+\end{figure}
+
 Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el prototipo en funcionamiento sobre el par Puerta del Sol -- Atocha, uno de los pares origen-destino que se retoman con más detalle en la evaluación del Capítulo~\ref{cap:pruebas}. En el modo simple (Figura~\ref{fig:visor_simple}) se aprecia la ruta recomendada, su distancia y duración, y la insignia cualitativa de seguridad (\textit{Segura} en este caso). En el modo detallado (Figura~\ref{fig:visor_detallado}) se superponen ambas rutas —discontinua en azul la rápida, continua en verde la segura— junto con la tabla comparativa de indicadores, cuyos valores coinciden con los recogidos más adelante en la Tabla~\ref{tab:resultados_rutas}.
 
 \begin{figure}[h]

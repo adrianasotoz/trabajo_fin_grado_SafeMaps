@@ -103,7 +103,43 @@ Los datos de accidentalidad se obtienen del \textbf{Portal de Datos Abiertos del
 \section{Proceso ETL}
 \label{sec:etl}
 
-El proceso ETL (Extract, Transform, Load) es la fase de preparación de datos previa a su integración en la base de datos espacial. Se implementa como una secuencia de scripts de Python numerados según su orden de ejecución (\texttt{scripts/01\_*.py} a \texttt{scripts/06\_*.py}), cada uno responsable de una fuente de datos y \textbf{idempotente}: comprueba si los datos ya están cargados antes de volver a procesarlos, salvo que se solicite explícitamente su recarga.
+El proceso ETL (Extract, Transform, Load) es la fase de preparación de datos previa a su integración en la base de datos espacial. Se implementa como una secuencia de scripts de Python numerados según su orden de ejecución (\texttt{scripts/01\_*.py} a \texttt{scripts/06\_*.py}), cada uno responsable de una fuente de datos y \textbf{idempotente}: comprueba si los datos ya están cargados antes de volver a procesarlos, salvo que se solicite explícitamente su recarga. La Figura~\ref{fig:flujo_etl} detalla este patrón, común a los seis scripts y que la Figura~\ref{fig:arquitectura} resume en una única caja ("Pipeline ETL").
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    comp/.style={rectangle, rounded corners, draw=black, thick, fill=gray!10,
+        minimum width=4.6cm, minimum height=1.05cm, align=center},
+    ctx/.style={rectangle, rounded corners, draw=black, dashed, fill=white,
+        minimum width=4.6cm, minimum height=0.9cm, align=center},
+    dec/.style={diamond, draw=black, thick, fill=gray!10, aspect=2.4,
+        inner sep=1pt, align=center, font=\small},
+    arr/.style={-{Latex[length=2.2mm]}, thick},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt}
+]
+
+\node[ctx] (fuente) {Fuente de datos sin procesar\\
+    \scriptsize Shapefile, CSV, Excel u \texttt{osmnx} (Sección~\ref{sec:fuentes_datos})};
+
+\node[dec, below=0.9cm of fuente] (check) {¿Ya cargada\\en \texttt{safe\_maps}?};
+
+\node[comp, below=1cm of check] (extraccion) {Extracción\\ \scriptsize Sección~\ref{subsec:extraccion}};
+\node[comp, below=0.6cm of extraccion] (transformacion) {Transformación\\ \scriptsize Sección~\ref{subsec:transformacion}};
+\node[comp, below=0.6cm of transformacion] (carga) {Carga\\ \scriptsize Sección~\ref{subsec:carga}};
+
+\node[ctx, right=2.1cm of extraccion] (nada) {No hacer nada};
+
+\draw[arr] (fuente) -- (check);
+\draw[arr] (check) -- (extraccion) node[lbl, midway] {no, o \texttt{OVERWRITE=True}};
+\draw[arr] (extraccion) -- (transformacion);
+\draw[arr] (transformacion) -- (carga);
+\draw[arr] (check.east) -| (nada) node[lbl, pos=0.25] {sí};
+
+\end{tikzpicture}
+\caption{Patrón de ejecución común a los seis scripts ETL (\texttt{scripts/01\_} a \texttt{06\_}): cada uno comprueba primero, mediante un \texttt{SELECT count(*)} sobre su tabla destino, si sus datos ya están cargados; si no lo están (o si se fuerza la recarga con \texttt{OVERWRITE=True}), ejecuta las tres fases de extracción, transformación y carga descritas en esta sección.}
+\label{fig:flujo_etl}
+\end{figure}
 
 \subsection{Extracción}
 \label{subsec:extraccion}
