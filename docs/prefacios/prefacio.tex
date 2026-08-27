@@ -18,12 +18,12 @@
 Adriana Soto Zaragoza\\
 \end{center}
 
-\noindent{\textbf{Palabras clave}: rutas seguras, Sistemas de Información Geográfica, PostGIS, pgRouting, movilidad urbana, análisis espacial, datos abiertos, Madrid}\\
+\noindent{\textbf{Palabras clave}: rutas seguras, Sistemas de Información Geográfica, PostGIS, pgRouting, seguridad peatonal, análisis espacial, datos abiertos, Madrid}\\
 
 \vspace{0.7cm}
 \noindent{\textbf{Resumen}}\\
 
-La movilidad peatonal urbana enfrenta riesgos que los sistemas de navegación convencionales ignoran al priorizar principalmente la distancia o el tiempo de desplazamiento. Este Trabajo Fin de Grado presenta el diseño y desarrollo de un sistema de cálculo de rutas seguras para peatones en la ciudad de Madrid, basado en el análisis espacial de datos abiertos georreferenciados. El sistema integra indicadores de riesgo urbano obtenidos del portal de Datos Abiertos y del Geoportal del Ayuntamiento de Madrid, como el servicio de iluminación pública de la ciudad, un índice de vulnerabilidad territorial por distritos y la accidentalidad con víctimas peatonales. Mediante un proceso ETL, los datos se han incorporado a una base de datos espacial implementada en PostgreSQL/PostGIS, donde se modela la red viaria urbana como un grafo ponderado. Los pesos de las aristas reflejan el nivel de riesgo de cada segmento de calle según los indicadores definidos. El motor de enrutamiento pgRouting calcula, sobre dicho grafo, la ruta que minimiza la exposición a dicho riesgo. El sistema se expone a través de un prototipo de visor cartográfico web desarrollado con Leaflet, que permite comparar la ruta segura con la ruta más corta convencional.
+La movilidad peatonal urbana manifiesta ciertos riesgos que los sistemas de navegación convencionales ignoran cuando se prioriza principalmente la distancia o el tiempo de desplazamiento. Este Trabajo Fin de Grado presenta el diseño y desarrollo de un sistema de cálculo de rutas seguras para peatones en la ciudad de Madrid, basado en el análisis espacial de datos abiertos georreferenciados. El sistema integra indicadores de riesgo urbano obtenidos del portal de Datos Abiertos y del Geoportal del Ayuntamiento de Madrid, como el servicio de iluminación pública de la ciudad, un índice de vulnerabilidad territorial por distritos y la accidentalidad con víctimas peatonales. Mediante un proceso ETL, los datos se han incorporado a una base de datos espacial implementada en PostgreSQL/PostGIS donde se modela la red peatonal a través de un grafo ponderado. Los pesos de las aristas reflejan el nivel de riesgo de cada segmento de calle según los indicadores definidos. El motor de enrutamiento pgRouting calcula a partir de este grafo la ruta que minimiza la exposición a dicho riesgo. El sistema se expone a través de un prototipo de visor cartográfico web desarrollado con Leaflet, que permite comparar la ruta segura con la ruta más corta convencional.
 \cleardoublepage
 
 
@@ -37,20 +37,20 @@ Adriana Soto Zaragoza\\
 \end{center}
 
 %\vspace{0.7cm}
-\noindent{\textbf{Keywords}: safe routing, Geographic Information Systems, PostGIS, pgRouting, urban mobility, spatial analysis, open data, Madrid}\\
+\noindent{\textbf{Keywords}: safe routing, Geographic Information Systems, PostGIS, pgRouting, pedestrian safety, spatial analysis, open data, Madrid}\\
 
 \vspace{0.7cm}
 \noindent{\textbf{Abstract}}\\
 
-Urban pedestrian mobility faces risks that conventional navigation systems overlook by optimising solely for distance or travel time. This Bachelor's Thesis presents the design and development of a safe route calculation system for pedestrians in the city of Madrid, based on spatial analysis of georeferenced open data. The system integrates urban risk indicators —public street lighting coverage, a district-level territorial vulnerability index, and pedestrian traffic accident records—, all sourced from the Madrid City Council Open Data portal and Geoportal. Through an ETL pipeline, these datasets are loaded into a spatial database built on PostgreSQL/PostGIS, where the urban road network is modelled as a weighted graph. Edge weights reflect the risk level of each street segment according to the defined indicators. The pgRouting extension computes the route minimising risk exposure over this graph. The system is exposed through a web mapping prototype developed with Leaflet, enabling users to compare the safe route against the conventional shortest path.
+Pedestrian mobility in urban environments entails specific risks that conventional navigation systems overlook when prioritising distance or travel time. This Bachelor's Thesis presents the design and development of a safe route calculation system for pedestrians in the city of Madrid, based on spatial analysis of georeferenced open data. The system integrates urban risk indicators such as public street lighting coverage, a district-level territorial vulnerability index, and pedestrian traffic accident records; all sourced from the Madrid City Council Open Data portal and Geoportal. Through an ETL pipeline, these datasets are processed and loaded into a spatial database built on PostgreSQL/PostGIS, where the pedestrian network is modelled as a weighted graph. Edge weights reflect the risk level of each street segment according to the defined indicators. Using this graph, the pgRouting extension computes the route that minimises risk exposure. The system is implemented as a web mapping prototype developed with Leaflet, enabling users to compare the safe route against the conventional shortest path.
 
 \chapter*{}
 \thispagestyle{empty}
 
 \noindent\rule[-1ex]{\textwidth}{2pt}\\[4.5ex]
 
-Yo, \textbf{Adriana Soto Zaragoza}, alumno de la titulación Ingeniería Informática de la \textbf{Escuela Técnica Superior
-de Ingenierías Informática y de Telecomunicación de la Universidad de Granada}, con DNI \rule{2.5cm}{0.4pt}, autorizo la
+Yo, \textbf{Adriana Soto Zaragoza}, alumna de la titulación Ingeniería Informática de la \textbf{Escuela Técnica Superior
+de Ingenierías Informática y de Telecomunicación de la Universidad de Granada}, con DNI 77244926R, autorizo la
 ubicación de la siguiente copia de mi Trabajo Fin de Grado en la biblioteca del centro para que pueda ser
 consultada por las personas que lo deseen.
 
@@ -61,7 +61,7 @@ consultada por las personas que lo deseen.
 \vspace{2cm}
 
 \begin{flushright}
-Granada, septiembre de 2026.
+Granada, agosto de 2026.
 \end{flushright}
 
 
@@ -85,7 +85,7 @@ que corresponda.
 
 \vspace{0.5cm}
 
-Y para que conste, expide y firma el presente informe en Granada a septiembre de 2026.
+Y para que conste, expide y firma el presente informe en Granada en agosto de 2026.
 
 \vspace{1cm}
 
@@ -95,14 +95,15 @@ Y para que conste, expide y firma el presente informe en Granada a septiembre de
 
 \noindent \textbf{José Samos Jiménez}
 
+\setlength{\parskip}{6pt}
 \chapter*{Agradecimientos}
 \thispagestyle{empty}
 
        \vspace{1cm}
 
 
-Poner aquí agradecimientos...
+A mi tutor, José Samos Jiménez, por su confianza durante el desarrollo del trabajo y por su excelente labor como docente en las asignaturas en las cuales he sido alumna. Gracias por abrirme la puerta a los sistemas multidimensionales y por demostrarme que sí que me gusta la geografía si es aplicada en los SIG (simplemente soy terrible memorizando nombres de ríos y montañas). Gracias por su paciencia, por aceptar ser mi tutor a pesar de no llevar TFGs durante los últimos años, y por ser un gran referente de inspiración profesional, docente y personal.
 
-% NOTA: Los agradecimientos son opcionales pero habituales en un TFG.
-% Puedes agradecer a tu tutor, familia, compañeros, etc.
-% Cuando los tengas redactados, sustituye este texto.
+A mi familia, por apoyar mis sueños de forma incondicional, y sobre todo por estar ahí en los momentos de tropiezo y dificultad. Gracias por enseñarme a no rendirme y a luchar por mis metas. A mi madre, por escuchar pacientemente durante años llamadas en las que no entendía nada de lo que le contaba sobre la carrera; a mi padre, por transmitirme esa curiosidad por la tecnología y la informática; y a mis hermanos mayores por ser un ejemplo constante de esfuerzo y superación. Gracias por enseñarme que con constancia todo se alcanza, y por inspirarme a ser la persona que soy hoy.
+
+A mi mejor amiga, Blanca, por ser mi pilar desde el primer día de carrera. Sin ti, no habría sido capaz de superar los momentos difíciles ni de disfrutar tanto de los buenos. Gracias por ser mi compañera, mi apoyo incondicional, y una de las personas más importantes de mi vida. Todo el que me conoce sabe quién eres, y eso demuestra lo imprescindible que te has vuelto. Gracias por ser mi amiga y gracias por ser mi casa fuera de casa.
