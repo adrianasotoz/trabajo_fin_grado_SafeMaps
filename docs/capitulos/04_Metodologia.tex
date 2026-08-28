@@ -24,7 +24,7 @@ El desarrollo se ha organizado siguiendo un enfoque \textbf{incremental por fuen
 
 Esta organización tiene una consecuencia directa sobre el esquema de la base de datos: la tabla \texttt{edges} no nace con todas sus columnas, sino que se \textbf{amplía progresivamente} a medida que cada nueva fuente de datos aporta un indicador adicional, mediante sentencias \texttt{ALTER TABLE ADD COLUMN IF NOT EXISTS} en el script SQL de cada fuente (Sección~\ref{sec:esquema_bd}).
 
-Cada script sigue además el mismo patrón de \textbf{idempotencia}: al inicio comprueba si los datos correspondientes ya están cargados (mediante un \texttt{SELECT count(*)} sobre la tabla destino) y, si es así, no hace nada, salvo que una variable \texttt{OVERWRITE} se ponga explícitamente a \texttt{True}. Esto permite ejecutar el pipeline completo repetidamente durante el desarrollo —por ejemplo, tras corregir un error en un script posterior— sin volver a descargar o recalcular lo ya procesado, y sin arriesgarse a duplicar filas por una ejecución accidental.
+Cada script sigue además el mismo patrón de \textbf{idempotencia}: al inicio comprueba si los datos correspondientes ya están cargados (mediante un \texttt{SELECT count(*)} sobre la tabla destino) y, si es así, no hace nada, salvo que una variable \texttt{OVERWRITE} se ponga explícitamente a \texttt{True}. Esto permite ejecutar el pipeline completo repetidamente durante el desarrollo (por ejemplo, tras corregir un error en un script posterior) sin volver a descargar o recalcular lo ya procesado, y sin arriesgarse a duplicar filas por una ejecución accidental.
 
 Tras cada incremento se ha aplicado una \textbf{verificación de control} mediante consultas SQL directas: recuento de filas cargadas, rango de valores de los indicadores calculados, y proporción de tramos afectados (por ejemplo, comprobar que el 100\,\% de los tramos quedan asignados a un distrito tras el \textit{join} espacial, o que la distribución del índice de peligrosidad resultante cae dentro de $[0, 1]$). Esta práctica ha permitido detectar durante el desarrollo, entre otros, el problema de las densidades desproporcionadas en tramos de longitud casi nula que motivó el recorte al percentil 99 descrito en la Sección~\ref{subsec:transformacion}.
 
@@ -38,7 +38,7 @@ Por último, el proyecto se ha versionado con \textbf{Git} desde su inicio, con 
 
 La Tabla~\ref{tab:stack} resume las principales tecnologías y versiones empleadas en el desarrollo.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{ll}
 \hline
@@ -62,7 +62,7 @@ Leaflet & 1.9.4 \\
 \label{tab:stack}
 \end{table}
 
-El entorno de desarrollo Python se gestiona mediante un entorno virtual (\texttt{venv}) aislado del sistema, con las dependencias fijadas por versión exacta en \texttt{requirements.txt} para garantizar la reproducibilidad del entorno. Las credenciales de acceso a la base de datos (usuario, contraseña, host, puerto y nombre de la base de datos \texttt{safe\_maps}) se externalizan en un fichero \texttt{.env}, cargado en tiempo de ejecución mediante \texttt{python-dotenv} y excluido explícitamente del control de versiones, de forma que ningún secreto queda expuesto en el repositorio público del proyecto.
+El entorno de desarrollo Python se gestiona mediante un entorno virtual (\texttt{venv}) aislado del sistema, con las dependencias fijadas por versión exacta en \texttt{requirements.txt} para garantizar la reproducibilidad del entorno. Las credenciales de acceso a la base de datos (usuario, contraseña, host, puerto y nombre de la base de datos \texttt{safe\_maps}) se externalizan en un fichero \texttt{.env}, cargado en tiempo de ejecución mediante \texttt{python-dotenv} y excluido explícitamente del control de versiones, de forma que ningún secreto queda expuesto en el repositorio del proyecto.
 
 % -----------------------------------------------------------------------
 % 4.3 ESQUEMA DE LA BASE DE DATOS
@@ -72,7 +72,7 @@ El entorno de desarrollo Python se gestiona mediante un entorno virtual (\texttt
 
 La base de datos \texttt{safe\_maps} está compuesta por seis tablas, cada una introducida por el script ETL de su fuente de datos correspondiente (Sección~\ref{sec:metodologia_desarrollo}). La Tabla~\ref{tab:tablas_bd} resume su propósito y volumen tras la carga completa.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \small
 \begin{tabular}{lp{6.5cm}r}
@@ -91,9 +91,9 @@ La base de datos \texttt{safe\_maps} está compuesta por seis tablas, cada una i
 \label{tab:tablas_bd}
 \end{table}
 
-\texttt{nodes} y \texttt{edges} constituyen el grafo viario propiamente dicho (Sección~\ref{sec:modelado_red}) y son las únicas tablas con la estructura de nodos/aristas que exige pgRouting. Las cuatro tablas restantes son fuentes de datos auxiliares que \textbf{no participan directamente en \texttt{pgr\_dijkstra}}: su función es aportar, mediante uniones espaciales o por clave de distrito, los valores con los que se rellenan las columnas de indicadores de \texttt{edges}. La Tabla~\ref{tab:columnas_edges} detalla las columnas de \texttt{edges}, agrupadas según el script que las incorpora.
+\texttt{nodes} y \texttt{edges} constituyen el grafo de la vía urbana propiamente dicho (Sección~\ref{sec:modelado_red}) y son las únicas tablas con la estructura de nodos/aristas que exige pgRouting. Las cuatro tablas restantes son fuentes de datos auxiliares que \textbf{no participan directamente en \texttt{pgr\_dijkstra}}: su función es aportar, mediante uniones espaciales o por clave de distrito, los valores con los que se rellenan las columnas de indicadores de \texttt{edges}. La Tabla~\ref{tab:columnas_edges} detalla las columnas de \texttt{edges}, agrupadas según el script que las incorpora.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \small
 \begin{tabular}{p{4cm}p{5.2cm}p{3cm}}
@@ -125,18 +125,19 @@ Todas las tablas con columna de geometría (\texttt{nodes}, \texttt{edges}, \tex
 \section{Organización del código fuente}
 \label{sec:organizacion_codigo}
 
-El repositorio del proyecto se organiza en los siguientes directorios principales:
+El proyecto se organiza en los siguientes directorios principales:
 
 \begin{itemize}
-    \item \texttt{scripts/} — los ocho scripts ETL y de cálculo descritos en la Sección~\ref{sec:metodologia_desarrollo}, más el módulo \texttt{rutas.py} y los scripts \texttt{09\_evaluacion.py} y \texttt{10\_mapa\_peligrosidad.py}, usados respectivamente para la evaluación comparativa del Capítulo~\ref{cap:pruebas} y para generar la Figura~\ref{fig:mapa_peligrosidad}.
-    \item \texttt{sql/} — un fichero de esquema SQL por cada fuente de datos, ejecutado por su script correspondiente al inicio de cada ejecución.
-    \item \texttt{data/raw/} y \texttt{data/processed/} — datos originales descargados y datos derivados (como las rutas de ejemplo exportadas a GeoJSON), excluidos del control de versiones por su tamaño.
-    \item \texttt{web/} — el prototipo de visor cartográfico (Sección~\ref{sec:backend_visor}).
-    \item \texttt{docs/} — la presente memoria, en \LaTeX.
+    \item \texttt{scripts/}: los ocho scripts ETL y de cálculo descritos en la Sección~\ref{sec:metodologia_desarrollo} (\texttt{01\_download\_osm.py} a \texttt{07\_calcular\_indice\_seguridad.py}, más \texttt{08\_calcular\_ruta.py}), junto con el módulo \texttt{rutas.py} que ambos reutilizan (Sección~\ref{sec:organizacion_codigo}) y los scripts \texttt{09\_evaluacion.py} y \texttt{10\_mapa\_peligrosidad.py}, usados respectivamente para la evaluación comparativa del Capítulo~\ref{cap:pruebas} y para generar la Figura~\ref{fig:mapa_peligrosidad}.
+    \item \texttt{sql/}: seis ficheros de esquema (\texttt{01\_schema.sql} a \texttt{06\_indice\_seguridad.sql}), uno por fuente de datos, cada uno ejecutado por su script ETL correspondiente al inicio de la ejecución (Sección~\ref{sec:esquema_bd}).
+    \item \texttt{data/raw/}: los datos originales tal como se descargan de cada fuente, en un subdirectorio por origen (\texttt{osm/}, \texttt{farolas/}, \texttt{accidentes/}, \texttt{iguala/}, \texttt{distritos/}); no se versiona, por el tamaño de estos ficheros y por ser reproducible a partir de las fuentes públicas citadas en la Sección~\ref{sec:fuentes_datos}.
+    \item \texttt{data/processed/}: los productos derivados del propio sistema, como el CSV de la evaluación comparativa (\texttt{evaluacion\_rutas.csv}, Capítulo~\ref{cap:pruebas}) o rutas de ejemplo exportadas a GeoJSON; tampoco se versiona.
+    \item \texttt{web/}: el prototipo de visor cartográfico (Sección~\ref{sec:backend_visor}), con el backend Flask en \texttt{app.py} y la plantilla HTML del frontend en \texttt{templates/index.html} (Sección~\ref{sec:frontend_visor}).
+    \item \texttt{docs/}: el código fuente \LaTeX{} de la presente memoria, organizado en un fichero por capítulo dentro de \texttt{capitulos/}, más los directorios \texttt{apendices/}, \texttt{prefacios/}, \texttt{portada/}, \texttt{bibliografia/} e \texttt{imagenes/}.
 \end{itemize}
 
 \begin{sloppypar}
-Todos los scripts de \texttt{scripts/} comparten una misma estructura: resuelven la ruta base del proyecto de forma independiente del directorio de trabajo actual (\texttt{Path(\_\_file\_\_).parent.parent}), cargan las credenciales desde \texttt{.env}, ejecutan el esquema SQL de su fuente de datos, y aplican el patrón de idempotencia descrito en la Sección~\ref{sec:metodologia_desarrollo}. Esta redundancia deliberada entre scripts —en lugar de extraer, por ejemplo, la creación de la conexión a una función compartida— responde a que cada script está pensado para poder leerse y ejecutarse de forma autónoma, sin necesidad de entender el resto del pipeline; el único código realmente compartido es \texttt{rutas.py}, que expone la función \texttt{calcular\_ruta()} usada tanto por el script de línea de comandos \texttt{08\_calcular\_ruta.py} como por el backend del visor web, evitando así duplicar la lógica de enrutamiento —la única parte del sistema con dos consumidores distintos.
+Todos los scripts de \texttt{scripts/} comparten una misma estructura: resuelven la ruta base del proyecto de forma independiente del directorio de trabajo actual (\texttt{Path(\_\_file\_\_).parent.parent}), cargan las credenciales desde \texttt{.env}, ejecutan el esquema SQL de su fuente de datos, y aplican el patrón de idempotencia descrito en la Sección~\ref{sec:metodologia_desarrollo}. Esta redundancia entre scripts es deliberada: no se ha extraído, por ejemplo, la creación de la conexión a una función compartida, porque cada script está pensado para poder leerse y ejecutarse de forma autónoma, sin necesidad de entender el resto del pipeline. La única excepción es \texttt{rutas.py}, que expone la función \texttt{calcular\_ruta()} y sí se comparte entre el script de línea de comandos \texttt{08\_calcular\_ruta.py} y el backend del visor web: al ser la única parte del sistema con dos consumidores distintos, ahí sí tiene sentido evitar duplicar la lógica de enrutamiento.
 \end{sloppypar}
 
 % -----------------------------------------------------------------------
@@ -149,8 +150,8 @@ El backend del prototipo se implementa como una aplicación \textbf{Flask} de un
 
 \begin{itemize}
     \item \texttt{GET /} — sirve la página HTML del visor.
-    \item \texttt{GET /api/ruta} — recibe las coordenadas de origen y destino como parámetros de consulta e invoca \texttt{calcular\_ruta()} (Sección~\ref{sec:enrutamiento}) una vez por cada criterio (\texttt{rapida} y \texttt{segura}), en paralelo mediante un \texttt{ThreadPoolExecutor} —cada hilo con su propia conexión a la base de datos, ya que los objetos \texttt{Connection} de SQLAlchemy no son seguros para compartir entre hilos—, y devuelve ambos resultados en un único objeto JSON.
-    \item \texttt{GET /api/geocode} — recibe un texto de búsqueda y consulta en paralelo (mediante un \texttt{ThreadPoolExecutor}) dos servicios de geocodificación: \textbf{CartoCiudad}, el geocodificador oficial del Instituto Geográfico Nacional basado en el Catastro, y \textbf{Nominatim}, el geocodificador de OpenStreetMap. Ambos son complementarios: CartoCiudad resuelve con precisión el número de portal de cualquier dirección de Madrid —algo que Nominatim solo consigue cuando existe en OSM un punto de interés etiquetado con ese número exacto—, mientras que Nominatim es quien indexa nombres de establecimientos y lugares (comercios, museos, monumentos) que no tienen entrada en el Catastro. Los resultados de ambos se combinan, se eliminan duplicados —tanto por proximidad de coordenadas como por coincidencia del texto mostrado— y se devuelven ya divididos en una línea principal y una línea secundaria de contexto (barrio, distrito o municipio).
+    \item \texttt{GET /api/ruta} — recibe las coordenadas de origen y destino como parámetros de consulta e invoca \texttt{calcular\_ruta()} (Sección~\ref{sec:enrutamiento}) una vez por cada criterio (\texttt{rapida} y \texttt{segura}), en paralelo mediante un \texttt{ThreadPoolExecutor}, con una conexión a la base de datos independiente por hilo (los objetos \texttt{Connection} de SQLAlchemy no son seguros para compartir entre hilos), y devuelve ambos resultados en un único objeto JSON.
+    \item \texttt{GET /api/geocode} — recibe un texto de búsqueda y consulta en paralelo (mediante un \texttt{ThreadPoolExecutor}) dos servicios de geocodificación: \textbf{CartoCiudad}, el geocodificador oficial del Instituto Geográfico Nacional basado en el Catastro, y \textbf{Nominatim}, el geocodificador de OpenStreetMap. Ambos son complementarios: CartoCiudad resuelve con precisión el número de portal de cualquier dirección de Madrid, algo que Nominatim solo consigue cuando existe en OSM un punto de interés etiquetado con ese número exacto. En cambio, es Nominatim quien indexa nombres de establecimientos y lugares (comercios, museos, monumentos) que no tienen entrada en el Catastro. Los resultados de ambos se combinan, se eliminan duplicados por proximidad de coordenadas o por coincidencia del texto mostrado, y se devuelven ya divididos en una línea principal y una línea secundaria de contexto (barrio, distrito o municipio).
     \item \texttt{GET /api/geocode/inverso} — recibe unas coordenadas y devuelve la dirección más cercana vía Nominatim, usada al hacer clic directamente sobre el mapa.
 \end{itemize}
 
@@ -165,7 +166,7 @@ Que el backend actúe como intermediario de estos servicios, en lugar de que el 
 El frontend se implementa como una única página HTML (\texttt{web/templates/index.html}) con JavaScript nativo (sin \textit{frameworks} como React o Vue) y \textbf{Leaflet} como biblioteca de mapas, lo que mantiene el prototipo ligero y sin pasos de compilación. Sus elementos principales son:
 
 \begin{itemize}
-    \item Un \textbf{campo de búsqueda} por cada punto (origen y destino), con autocompletado contra \texttt{/api/geocode}: la petición se lanza con un \textit{debounce} de 400\,ms tras dejar de escribir, para no saturar los servicios de geocodificación con una petición por cada pulsación de tecla. Cada sugerencia se muestra en dos líneas —nombre y contexto geográfico, al estilo de los buscadores de mapas habituales— y un botón para vaciar el campo de un solo clic evita tener que borrar el texto carácter a carácter.
+    \item Un \textbf{campo de búsqueda} por cada punto (origen y destino), con autocompletado contra \texttt{/api/geocode}: la petición se lanza con un \textit{debounce} de 400\,ms tras dejar de escribir, para no saturar los servicios de geocodificación con una petición por cada pulsación de tecla. Cada sugerencia se muestra en dos líneas, nombre y contexto geográfico, al estilo de los buscadores de mapas habituales; un botón para vaciar el campo de un solo clic evita además tener que borrar el texto carácter a carácter.
     \item Un botón de \textbf{geolocalización} que usa la API \texttt{navigator.geolocation} del navegador para fijar el origen en la posición actual del usuario.
     \item La posibilidad de fijar cualquiera de los dos puntos haciendo \textbf{clic directamente sobre el mapa}, con geocodificación inversa automática para mostrar la dirección resultante en el campo correspondiente.
     \item Un botón para \textbf{intercambiar} origen y destino.
@@ -177,23 +178,23 @@ El estado de la interfaz (puntos seleccionados, modo activo, última respuesta d
 
 La Figura~\ref{fig:visor_buscador} muestra el buscador de direcciones en funcionamiento: mientras el usuario escribe, el campo consulta \texttt{/api/geocode} con el \textit{debounce} descrito más arriba y despliega una lista de sugerencias acotadas al municipio de Madrid, de la que se selecciona una para fijar el origen o el destino. El ejemplo de la figura, una dirección con número de portal, ilustra precisamente el motivo de combinar ambos geocodificadores: es CartoCiudad, y no Nominatim, quien resuelve el número exacto (22) en las sugerencias mostradas.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imagenes/visor_buscador.png}
-\caption{Buscador de direcciones con autocompletado contra \texttt{/api/geocode}, mostrando las sugerencias para "Paseo de la Castellana 22".}
+\caption{Buscador de direcciones con autocompletado contra \texttt{/api/geocode}, mostrando las sugerencias para ``Paseo de la Castellana 22''.}
 \label{fig:visor_buscador}
 \end{figure}
 
-Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el prototipo en funcionamiento sobre el par Puerta del Sol -- Atocha, uno de los pares origen-destino que se retoman con más detalle en la evaluación del Capítulo~\ref{cap:pruebas}. En el modo simple (Figura~\ref{fig:visor_simple}) se aprecia la ruta recomendada, su distancia y duración, y la insignia cualitativa de seguridad (\textit{Segura} en este caso). En el modo detallado (Figura~\ref{fig:visor_detallado}) se superponen ambas rutas —discontinua en azul la rápida, continua en verde la segura— junto con la tabla comparativa de indicadores, cuyos valores coinciden con los recogidos más adelante en la Tabla~\ref{tab:resultados_rutas}.
+Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el prototipo en funcionamiento sobre el par Puerta del Sol -- Atocha, uno de los pares origen-destino que se retoman con más detalle en la evaluación del Capítulo~\ref{cap:pruebas}. En el modo simple (Figura~\ref{fig:visor_simple}) se aprecia la ruta recomendada, su distancia y duración, y la insignia cualitativa de seguridad (\textit{Segura} en este caso). En el modo detallado (Figura~\ref{fig:visor_detallado}) se superponen ambas rutas (la rápida en azul discontinuo, la segura en verde continuo) junto con la tabla comparativa de indicadores, cuyos valores coinciden con los recogidos más adelante en la Tabla~\ref{tab:resultados_rutas}.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imagenes/visor_simple.png}
 \caption{Visor web, modo simple, para el trayecto Puerta del Sol -- Atocha.}
 \label{fig:visor_simple}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imagenes/visor_detallado.png}
 \caption{Visor web, modo detallado, para el mismo trayecto: comparativa entre la ruta rápida y la ruta segura.}

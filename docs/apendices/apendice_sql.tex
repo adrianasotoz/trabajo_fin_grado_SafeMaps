@@ -54,7 +54,7 @@ WHERE e.id = sub.id AND e.length > 0;
 \section{Join espacial tramo-distrito con resolución de casos límite}
 \label{ap:sec:join_distrito}
 
-El Listado~\ref{lst:join-distrito} asigna a cada tramo el distrito que contiene su centroide (Sección~\ref{sec:modelado_red}), y resuelve los tramos que quedan sin asignar —el centroide cae fuera de todos los polígonos, típicamente por pequeñas discrepancias entre la red de OSM y los límites administrativos oficiales— asignándolos al distrito más cercano mediante el operador de vecino más cercano (\texttt{<->}) en una subconsulta \texttt{LATERAL}.
+El Listado~\ref{lst:join-distrito} asigna a cada tramo el distrito que contiene su centroide (Sección~\ref{sec:modelado_red}), y resuelve los tramos que quedan sin asignar (el centroide cae fuera de todos los polígonos, típicamente por pequeñas discrepancias entre la red de OSM y los límites administrativos oficiales) asignándolos al distrito más cercano mediante el operador de vecino más cercano (\texttt{<->}) en una subconsulta \texttt{LATERAL}.
 
 \begin{lstlisting}[style=SQL, caption={Join espacial tramo-distrito (\texttt{scripts/06\_load\_distritos.py}).}, label={lst:join-distrito}]
 -- Distrito que contiene el centroide del tramo.
