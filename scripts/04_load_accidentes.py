@@ -1,4 +1,5 @@
 import os
+import sys
 
 import geopandas as gpd
 import pandas as pd
@@ -8,6 +9,8 @@ from shapely.geometry import Point
 from sqlalchemy import create_engine, text
 
 BASE = Path(__file__).parent.parent
+sys.path.insert(0, str(Path(__file__).parent))
+from geo_utils import filtrar_dentro_de_madrid  # noqa: E402
 OVERWRITE = False  # Cambiar a True para vaciar y recargar la tabla aunque ya tenga datos
 BUFFER_M = 20  # Radio (metros) en el que se cuentan accidentes cercanos a cada tramo
 
@@ -92,6 +95,15 @@ else:
         Point(xy) for xy in zip(accidentes["coordenada_x_utm"], accidentes["coordenada_y_utm"])
     ]
     accidentes = gpd.GeoDataFrame(accidentes, geometry=geometry, crs="EPSG:25830").to_crs("EPSG:4326")
+
+    # Descarta accidentes cuya coordenada cae fuera del límite municipal de Madrid
+    # (mismo shapefile que 06_load_distritos.py; errores puntuales de geocodificación
+    # en el origen de datos son la causa más probable, dado que la fuente ya es
+    # municipal). Ver tests/test_etl.py::test_filtrar_dentro_de_madrid.
+    accidentes, n_descartados = filtrar_dentro_de_madrid(accidentes, BASE)
+    if n_descartados:
+        print(f"Accidentes descartados por caer fuera del límite municipal de Madrid: {n_descartados}")
+
     accidentes = accidentes.rename(columns={"geometry": "geom"}).set_geometry("geom")[
         [
             "num_expediente",

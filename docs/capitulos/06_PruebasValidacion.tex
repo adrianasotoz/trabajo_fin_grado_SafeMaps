@@ -83,3 +83,45 @@ La validación presentada en este capítulo tiene limitaciones que conviene no i
 \end{enumerate}
 
 Estas limitaciones no invalidan el resultado principal del capítulo: que el sistema reduce de forma medible la exposición a los indicadores de riesgo modelados a cambio de un incremento moderado de distancia. Sí delimitan, en cambio, con precisión el alcance de esa afirmación, y se retoman como líneas de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
+
+% -----------------------------------------------------------------------
+% 6.5 PLAN DE PRUEBAS UNITARIAS Y DE INTEGRACIÓN DEL SOFTWARE
+% -----------------------------------------------------------------------
+\section{Plan de pruebas unitarias y de integración del software}
+\label{sec:plan_pruebas}
+
+Como complemento a la validación cuantitativa de las rutas de las secciones anteriores, se ha desarrollado un conjunto de pruebas automatizadas con \textbf{pytest} sobre los componentes críticos del software, recogidas en el directorio \texttt{tests/} del repositorio: nueve pruebas repartidas en tres ficheros, que se ejecutan manualmente con \texttt{pytest tests/} (el proyecto no dispone de integración continua, Sección~\ref{sec:entorno_herramientas}). A diferencia de un test unitario clásico con \textit{mocks}, estas pruebas se ejecutan contra la base de datos real y, cuando corresponde, contra una instancia del backend Flask arrancada para la ocasión (\texttt{tests/conftest.py}): dado el tamaño y la naturaleza individual del proyecto, verificar el comportamiento real del sistema resultaba más útil que aislar cada componente con datos simulados.
+
+\subsection{Pruebas unitarias de los scripts ETL}
+\label{subsec:pruebas_etl}
+
+El fichero \texttt{tests/test\_etl.py} cubre tres comportamientos del pipeline de procesamiento de datos:
+
+\begin{itemize}
+    \item \textbf{UT1 -- Idempotencia.} Reproduce en un test el patrón de idempotencia descrito en la Sección~\ref{sec:metodologia_desarrollo} (Apéndice~\ref{ap:sec:idempotencia}): ejecuta \texttt{scripts/04\_load\_accidentes.py} como subproceso con \texttt{OVERWRITE=False} sobre la base de datos ya cargada, y comprueba que el número de filas de \texttt{accidentes} no cambia y que el script informa de que no ha hecho nada.
+    \item \textbf{UT2 -- Filtro geográfico de coordenadas.} Prueba unitaria, sin base de datos, de \texttt{filtrar\_dentro\_de\_madrid()} (\texttt{scripts/geo\_utils.py}): sobre dos puntos sintéticos, uno en Madrid y otro en Barcelona, comprueba que se descarta exactamente el segundo. Esta función es la que usa \texttt{04\_load\_accidentes.py} para descartar accidentes cuya coordenada cae fuera del límite municipal (mismo shapefile que la Sección~\ref{subsec:distritos_datos}); aplicada a los datos reales, descarta 32 de los 63\,042 accidentes cargados.
+    \item \textbf{UT3 -- Acotación del índice de peligrosidad.} Comprueba, sobre los 524\,292 tramos ya calculados, que ningún valor de \texttt{indice\_peligrosidad} cae fuera de $[0, 1]$, la propiedad que debe garantizar el recorte al percentil 99 de la Sección~\ref{subsec:coste_enrutamiento} y que hasta ahora solo se comprobaba manualmente (Sección~\ref{sec:metodologia_desarrollo}).
+\end{itemize}
+
+\subsection{Pruebas de integración del backend y base de datos}
+\label{subsec:pruebas_integracion}
+
+El fichero \texttt{tests/test\_backend.py} cubre tres comportamientos del backend Flask y su interacción con PostgreSQL/pgRouting:
+
+\begin{itemize}
+    \item \textbf{IT1 -- Peticiones concurrentes a \texttt{/api/ruta}.} Lanza ocho peticiones simultáneas contra el endpoint (Sección~\ref{sec:backend_visor}) y comprueba que las ocho responden con código 200 y una geometría y distancia válidas para ambos criterios, verificando en la práctica que el \texttt{ThreadPoolExecutor} y la conexión independiente por hilo no producen errores de concurrencia.
+    \item \textbf{IT2 -- Resolución de rutas en los extremos del grafo.} Consulta en la base de datos los nodos más al norte y más al sur de la red (174\,394 nodos), y comprueba que \texttt{calcular\_ruta()} (Sección~\ref{sec:enrutamiento}) encuentra una ruta no vacía entre ambos, ejercitando precisamente el caso límite que motiva el reintento sin acotar de la Sección~\ref{subsec:optimizacion_enrutamiento}. Se añade además una prueba de que pedir una ruta entre un punto y sí mismo falla de forma controlada (\texttt{ValueError}), en lugar de devolver un resultado sin sentido.
+    \item \textbf{IT3 -- Deduplicación del proxy de geocodificación.} Consulta \texttt{/api/geocode} con una dirección ambigua (``Atocha, Madrid'') y comprueba que la lista combinada de CartoCiudad y Nominatim no contiene resultados duplicados, ni por coordenadas redondeadas ni por texto mostrado, y que respeta el límite de ocho resultados (Sección~\ref{sec:backend_visor}).
+\end{itemize}
+
+\subsection{Pruebas de caja negra del visor frontend}
+\label{subsec:pruebas_frontend}
+
+El fichero \texttt{tests/test\_frontend.py} automatiza el navegador con \textbf{Selenium} en modo \textit{headless}, interceptando las llamadas a \texttt{fetch} mediante el protocolo DevTools de Chrome para contar peticiones al backend sin necesidad de inspeccionar la red por fuera del propio navegador:
+
+\begin{itemize}
+    \item \textbf{ST1 -- Límite de peticiones por \textit{debounce}.} Escribe una dirección completa carácter a carácter en el buscador y comprueba que, pese a las catorce pulsaciones de tecla, se dispara una única petición a \texttt{/api/geocode}, verificando el \textit{debounce} de 400\,ms de la Sección~\ref{sec:frontend_visor}.
+    \item \textbf{ST2 -- Coherencia de estado entre modos.} Fija un origen y un destino, espera la respuesta de \texttt{/api/ruta}, y alterna varias veces entre los modos \textit{detallado} y \textit{simple}; comprueba que el número de peticiones a \texttt{/api/ruta} permanece en una sola, confirmando que el cambio de modo se resuelve en el cliente reutilizando \texttt{estado.ultimaRespuesta} (Sección~\ref{sec:frontend_visor}) sin volver a consultar al backend.
+\end{itemize}
+
+Las nueve pruebas se ejecutan en unos 30\,segundos y han pasado de forma consistente en varias ejecuciones repetidas. Dos de ellas dependen de servicios externos (CartoCiudad y Nominatim en IT3, y la propia geocodificación en ST1 y ST2), por lo que su resultado puede variar puntualmente si esos servicios no responden; el resto solo depende de la base de datos local y del propio código del proyecto. El plan no cubre los scripts \texttt{03\_load\_farolas.py}, \texttt{05\_load\_vulnerabilidad.py} ni \texttt{06\_load\_distritos.py} de forma individual, al compartir estructura y patrón de idempotencia con \texttt{04\_load\_accidentes.py} (Sección~\ref{sec:metodologia_desarrollo}); ampliar esta cobertura, junto con la integración de estas pruebas en un flujo de integración continua, se recoge como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.

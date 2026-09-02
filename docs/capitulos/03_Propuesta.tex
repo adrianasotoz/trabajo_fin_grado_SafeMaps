@@ -60,7 +60,109 @@ El sistema se articula en torno a cuatro componentes principales, cuya interacci
 \label{fig:arquitectura}
 \end{figure}
 
-A diferencia del planteamiento inicial del proyecto, la versión implementada de SafeMaps-Madrid \textbf{no distingue franjas horarias}: el coste de seguridad de cada arista es único e independiente de la hora del día. Esta simplificación se adoptó por dos motivos. Primero, los datos de accidentalidad disponibles no permiten una segmentación diurna/nocturna suficientemente robusta como para calcular dos indicadores fiables sin perder densidad muestral en buena parte de la red. Segundo, al no disponerse de un indicador de criminalidad real (véase la Sección~\ref{subsec:vulnerabilidad_datos}), el argumento principal para justificar la ponderación temporal pierde parte de su fundamento en este sistema: ese argumento era la variación día/noche del riesgo de criminalidad, cuya importancia subrayan trabajos como el de Levy et al. \cite{levy2020} en torno al acoso callejero nocturno. La incorporación de una dimensión temporal se plantea como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
+A diferencia del planteamiento inicial del proyecto, la versión implementada de SafeMaps-Madrid \textbf{no distingue franjas horarias}: el coste de seguridad de cada arista es único e independiente de la hora del día. Esta simplificación no responde a una limitación de implementación no resuelta, sino a una decisión de diseño motivada por tres razones.
+
+La primera es de naturaleza \textbf{estadística}. Los datos de accidentalidad disponibles (Sección~\ref{subsec:accidentes_datos}) agregan ya tres años completos (2023-2025) para obtener, por tramo, un número de sucesos mínimamente representativo; segmentar además esos sucesos por franja horaria (por ejemplo, diurna/nocturna) reduciría drásticamente el número de accidentes por arista, hasta el punto de que la mayoría de los 524\,292 tramos de la red se quedarían sin muestra suficiente para calcular un indicador fiable, y el resultado reflejaría el ruido de la muestra más que el riesgo real del tramo.
+
+La segunda tiene que ver con la variable que sustituye al indicador de criminalidad (Sección~\ref{subsec:vulnerabilidad_datos}). Al no disponerse de un indicador de criminalidad real, el argumento principal para justificar una ponderación horaria pierde buena parte de su fundamento en este sistema: ese argumento era la variación día/noche del riesgo de criminalidad, cuya importancia subrayan trabajos como el de Levy et al. \cite{levy2020} en torno al acoso callejero nocturno. El Índice Iguala que se usa en su lugar es, en cambio, un índice socioeconómico agregado por distrito que no tiene variación horaria -- la vulnerabilidad de un distrito es la misma a las 12:00 que a las 24:00 --, de modo que introducir una franja horaria solo en la iluminación o la accidentalidad daría una falsa sensación de precisión temporal al índice de peligrosidad conjunto, sin que el componente de vulnerabilidad pudiera acompañar esa distinción.
+
+La tercera es de orden \textbf{práctico}. El coste seguro de cada arista (Ecuación~\ref{eq:coste_seguro}) se calcula una única vez para los 524\,292 tramos de la red y se almacena como columna estática en la tabla \texttt{edges} (Sección~\ref{subsec:coste_enrutamiento}), lo que es precisamente lo que permite a \texttt{pgr\_dijkstra} resolver cada consulta en 0,1--0,3\,s sobre el trayecto acotado (Sección~\ref{subsec:optimizacion_enrutamiento}). Distinguir franjas horarias obligaría a duplicar esa columna o a recalcularla en el momento de la consulta según la hora, complicando tanto el pipeline ETL (Sección~\ref{sec:etl}) como los tiempos de respuesta del visor.
+
+La incorporación de una dimensión temporal se plantea, por tanto, como línea de trabajo futuro en el Capítulo~\ref{cap:conclusiones}.
+
+\subsection{Especificación de requisitos}
+\label{subsec:requisitos}
+
+A partir de la visión general anterior, se concretan los requisitos que debe satisfacer SafeMaps-Madrid, distinguiendo entre \textbf{requisitos funcionales} (los servicios que el sistema debe prestar) y \textbf{requisitos no funcionales} (las restricciones y propiedades de calidad bajo las que debe operar). Todos ellos corresponden a funcionalidades ya implementadas en el prototipo y se describen con más detalle en los capítulos siguientes; se recogen aquí de forma centralizada para fijar el alcance del sistema antes de entrar en su diseño.
+
+Los requisitos funcionales identificados son:
+
+\begin{itemize}
+    \item \textbf{RF1 - Geocodificación y autocompletado de direcciones}: el sistema debe permitir introducir un texto de búsqueda libre para el origen y el destino, y devolver sugerencias de direcciones combinando un geocodificador catastral (CartoCiudad, IGN) con uno de propósito general (Nominatim, OSM), para cubrir tanto direcciones exactas como nombres de establecimientos o lugares (Sección~\ref{sec:backend_visor}).
+    \item \textbf{RF2 - Geolocalización del dispositivo}: el visor debe poder obtener las coordenadas del usuario mediante la API de geolocalización del navegador y fijarlas como origen del trayecto (Sección~\ref{sec:frontend_visor}).
+    \item \textbf{RF3 - Cálculo de la ruta rápida}: el sistema debe calcular, sobre el grafo peatonal, el camino de menor coste según la longitud real de los tramos (Sección~\ref{subsec:coste_enrutamiento}).
+    \item \textbf{RF4 - Cálculo de la ruta segura}: el sistema debe calcular el camino de menor coste según la función de coste seguro (Ecuación~\ref{eq:coste_seguro}), que penaliza la longitud de cada tramo en proporción a su índice de peligrosidad.
+    \item \textbf{RF5 - Visualización comparativa}: el visor debe dibujar ambas rutas sobre el mapa (la segura en verde continuo, la rápida en azul discontinuo) y, en el modo detallado, mostrar una comparativa cuantitativa de iluminación, siniestralidad, atropellos y vulnerabilidad territorial entre ambas (Sección~\ref{sec:frontend_visor}).
+\end{itemize}
+
+Junto a ellos, se identifican los siguientes requisitos no funcionales:
+
+\begin{itemize}
+    \item \textbf{RNF1 - Tiempo de respuesta}: el cálculo de ambas rutas debe resolverse en menos de un segundo para desplazamientos habituales dentro de Madrid. Esto se logra acotando geográficamente la consulta a \texttt{pgr\_dijkstra} (Sección~\ref{subsec:optimizacion_enrutamiento}, con tiempos medidos de 0,1--0,7\,s según la distancia) y ejecutando en paralelo el criterio rápido y el seguro mediante un \texttt{ThreadPoolExecutor} en el backend (Sección~\ref{sec:backend_visor}).
+    \item \textbf{RNF2 - Interfaz adaptable}: la interfaz debe reorganizarse en pantallas estrechas, apilando el panel de búsqueda bajo el mapa por debajo de 720\,px de ancho y usando unidades de \textit{viewport} dinámicas (\texttt{dvh}) para no perder visibilidad por las barras de los navegadores móviles (Sección~\ref{sec:frontend_visor}).
+    \item \textbf{RNF3 - Idempotencia del procesamiento de datos}: cada script del pipeline ETL debe comprobar si sus datos ya están cargados antes de procesarlos de nuevo, evitando duplicados ante ejecuciones repetidas (Sección~\ref{sec:metodologia_desarrollo}).
+    \item \textbf{RNF4 - Reproducibilidad del entorno}: el backend debe ejecutarse en un entorno virtual aislado, con las dependencias fijadas por versión exacta (Sección~\ref{sec:entorno_herramientas}).
+    \item \textbf{RNF5 - Gestión externa de credenciales}: los parámetros de conexión a la base de datos deben cargarse desde un fichero de configuración excluido del control de versiones, sin secretos embebidos en el código (Sección~\ref{sec:entorno_herramientas}).
+\end{itemize}
+
+\subsection{Modelado de casos de uso del sistema}
+\label{subsec:casos_uso}
+
+Los requisitos anteriores se traducen en las interacciones entre los actores del sistema y las funciones que ofrece el visor. Se identifican tres actores:
+
+\begin{itemize}
+    \item \textbf{Peatón} (actor principal): usuario que consulta rutas a través del visor web, introduciendo direcciones, geolocalizándose o haciendo clic sobre el mapa.
+    \item \textbf{Servicio cartográfico OSM} (actor secundario): proveedor de las teselas de mapa que consume Leaflet en el frontend.
+    \item \textbf{Servicios de geocodificación} (actor secundario): CartoCiudad y Nominatim, consultados desde el backend para resolver direcciones y coordenadas.
+\end{itemize}
+
+Sobre estos actores se apoyan los cinco casos de uso principales:
+
+\begin{itemize}
+    \item \textbf{UC1 - Geolocalizar usuario}: el Peatón solicita centrar el mapa en su ubicación. El sistema obtiene las coordenadas mediante la API del navegador, las resuelve a una dirección legible con el geocodificador inverso y las fija como origen (RF2).
+    \item \textbf{UC2 - Buscar dirección}: el Peatón escribe en el buscador. Tras un retardo de 400\,ms sin nueva pulsación (\textit{debounce}), el sistema consulta en paralelo CartoCiudad y Nominatim y muestra las sugerencias combinadas (RF1).
+    \item \textbf{UC3 - Definir puntos sobre el mapa}: el Peatón hace clic en el mapa. El sistema resuelve las coordenadas del clic con el geocodificador inverso y las asigna como origen o destino, según cuál de los dos esté aún libre.
+    \item \textbf{UC4 - Calcular y comparar rutas}: una vez fijados origen y destino, el sistema calcula en paralelo la ruta rápida y la ruta segura (RF3, RF4) y devuelve ambas geometrías, junto con sus métricas agregadas de distancia, duración e indicadores de seguridad.
+    \item \textbf{UC5 - Visualizar comparativa}: el Peatón activa el modo detallado. El visor dibuja ambas rutas y muestra, tramo comparado con tramo, la variación porcentual de cada indicador entre la ruta segura y la rápida (RF5).
+\end{itemize}
+
+La Figura~\ref{fig:casos_uso} resume estas relaciones. Los tres casos de uso que requieren resolver unas coordenadas a una dirección legible o un texto a unas coordenadas (UC1, UC2 y UC3) son los que dependen del proxy de geocodificación; el servicio cartográfico OSM, por su parte, no está ligado a un caso de uso concreto, sino que sirve de forma continua las teselas del mapa base sobre el que se apoya toda la interacción. Los componentes internos que resuelven UC4 (base de datos espacial y motor pgRouting) ya se detallaron en la Figura~\ref{fig:arquitectura} y no se repiten aquí.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\small,
+    actor/.style={rectangle, rounded corners, draw=black, dashed, fill=white,
+        minimum width=2.7cm, minimum height=1cm, align=center},
+    uc/.style={ellipse, draw=black, thick, fill=gray!10,
+        minimum width=4.6cm, minimum height=0.9cm, align=center},
+    arr/.style={-{Latex[length=2.2mm]}, thick}
+]
+
+\node[actor] (peaton) at (-2, 0) {Peatón};
+
+\node[uc] (uc1) at (5, 3)    {UC1 -- Geolocalizar\\ usuario};
+\node[uc] (uc2) at (5, 1.5)  {UC2 -- Buscar\\ dirección};
+\node[uc] (uc3) at (5, 0)    {UC3 -- Definir puntos\\ en el mapa};
+\node[uc] (uc4) at (5, -1.5) {UC4 -- Calcular y\\ comparar rutas};
+\node[uc] (uc5) at (5, -3)   {UC5 -- Visualizar\\ comparativa};
+
+\node[actor] (proxy) at (12.3, 0.75) {Proxy de\\ geocodificación};
+\node[actor] (osm) at (12.3, -3) {Servicio\\ cartográfico OSM};
+
+\begin{scope}[on background layer]
+\node[rectangle, rounded corners, draw=black, thick, inner sep=0.55cm,
+    fit=(uc1)(uc2)(uc3)(uc4)(uc5),
+    label={[font=\small\bfseries]above:SafeMaps-Madrid (visor web)}] (sistema) {};
+\end{scope}
+
+\draw[arr] (peaton) -- (uc1);
+\draw[arr] (peaton) -- (uc2);
+\draw[arr] (peaton) -- (uc3);
+\draw[arr] (peaton) -- (uc4);
+\draw[arr] (peaton) -- (uc5);
+
+\draw[arr] (uc1) to[bend left=20] (proxy);
+\draw[arr] (uc2) -- (proxy);
+\draw[arr] (uc3) -- (proxy);
+\draw[arr, dashed] (osm) -- (sistema.east |- osm);
+
+\end{tikzpicture}%
+}
+\caption{Diagrama de casos de uso de SafeMaps-Madrid. El Peatón es el actor principal de los cinco casos de uso del visor; el proxy de geocodificación (CartoCiudad y Nominatim) interviene en la geolocalización (UC1) y en la búsqueda de direcciones (UC2), así como en la geocodificación inversa de un punto del mapa (UC3); el servicio cartográfico OSM sirve las teselas del mapa base de forma continua, sin asociarse a un caso de uso puntual.}
+\label{fig:casos_uso}
+\end{figure}
 
 % -----------------------------------------------------------------------
 % 3.2 FUENTES DE DATOS

@@ -1,4 +1,4 @@
-\chapter{Conclusiones y trabajos futuros}
+\chapter{Conclusiones y trabajo futuro}
 \label{cap:conclusiones}
 
 Este capítulo cierra la memoria evaluando en qué medida se han alcanzado los objetivos planteados en el Capítulo~\ref{cap:introduccion} y la hipótesis de partida, recogiendo de forma unificada las limitaciones del sistema ya señaladas a lo largo de los capítulos anteriores, y proponiendo las líneas de trabajo futuro que se derivan directamente de ellas.
@@ -77,6 +77,8 @@ Varias de las limitaciones señaladas en la Sección~\ref{sec:limitaciones_siste
     \item \textbf{Incorporar factores adicionales al coste de seguridad.} Trabajos como el de Byon et al.\ \cite{byon2010}, que integran en la elección de ruta variables como la pendiente del terreno o el valor escénico del recorrido, sugieren otras dimensiones: accesibilidad para personas con movilidad reducida, pendiente, disponibilidad de sombra o de aceras en buen estado, que podrían añadirse a la función de coste con la misma metodología de normalización y ponderación empleada en este proyecto (Sección~\ref{sec:funcion_coste}).
 
     \item \textbf{Evolucionar el prototipo hacia un sistema desplegable.} El visor actual es un prototipo de un único fichero pensado para demostrar la viabilidad del enfoque (Secciones~\ref{sec:backend_visor} y~\ref{sec:frontend_visor}); llevarlo a producción exigiría, entre otras cosas, cachear o precalcular rutas frecuentes, servir la aplicación tras un servidor WSGI en lugar del servidor de desarrollo de Flask, y automatizar la actualización periódica de los datos de origen (iluminación, accidentalidad) a medida que el Ayuntamiento de Madrid publique nuevas versiones.
+
+    \item \textbf{Ampliar la cobertura de pruebas e integrarlas en un flujo de integración continua.} El plan de pruebas actual (Sección~\ref{sec:plan_pruebas}) no cubre de forma individual todos los scripts ETL, y se ejecuta manualmente al no existir un pipeline de integración continua; extender la cobertura a las fuentes de datos restantes y automatizar la ejecución de \texttt{pytest tests/} en cada cambio reforzaría la confianza en el sistema a medida que evolucione.
 
     \item \textbf{Permitir rutas con paradas intermedias.} El visor actual solo admite un origen y un destino; extenderlo para aceptar una secuencia de puntos intermedios, encadenando \texttt{calcular\_ruta()} (Sección~\ref{sec:enrutamiento}) tramo a tramo entre cada par consecutivo, cubriría trayectos habituales que combinan varias gestiones en una misma salida, aunque exigiría rediseñar tanto la interfaz de búsqueda como la tabla comparativa del modo detallado (Sección~\ref{sec:frontend_visor}) para presentar varios tramos a la vez.
 

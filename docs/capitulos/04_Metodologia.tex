@@ -146,7 +146,7 @@ Todos los scripts de \texttt{scripts/} comparten una misma estructura: resuelven
 \section{Implementación del backend del visor}
 \label{sec:backend_visor}
 
-El backend del prototipo se implementa como una aplicación \textbf{Flask} de un único fichero (\texttt{web/app.py}), que expone cuatro rutas HTTP:
+El backend del prototipo se implementa como una aplicación \textbf{Flask} \cite{grinberg2018} de un único fichero (\texttt{web/app.py}), que expone cuatro rutas HTTP:
 
 \begin{itemize}
     \item \texttt{GET /} — sirve la página HTML del visor.
@@ -199,4 +199,13 @@ Las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado} muestran el proto
 \includegraphics[width=\textwidth]{imagenes/visor_detallado.png}
 \caption{Visor web, modo detallado, para el mismo trayecto: comparativa entre la ruta rápida y la ruta segura.}
 \label{fig:visor_detallado}
+\end{figure}
+
+La Figura~\ref{fig:visor_movil} muestra el mismo trayecto en un ancho de pantalla de móvil (390\,px), por debajo del \textit{breakpoint} de 720\,px descrito más arriba: el panel de búsqueda y resultados pasa a ocupar el ancho completo bajo el mapa, en lugar de la disposición lateral de las Figuras~\ref{fig:visor_simple} y~\ref{fig:visor_detallado}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[height=0.55\textheight]{imagenes/visor_movil.png}
+\caption{Visor web en un ancho de pantalla de móvil (390\,px), con el panel apilado bajo el mapa, para el mismo trayecto Puerta del Sol -- Atocha.}
+\label{fig:visor_movil}
 \end{figure}
